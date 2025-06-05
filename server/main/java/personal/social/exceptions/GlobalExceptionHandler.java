@@ -1,116 +1,121 @@
 package personal.social.exceptions;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import personal.social.payload.ApiResponse;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler for REST API endpoints.
+ * Global exception handler for the application that intercepts and handles various exceptions
+ * thrown across all controllers. Provides centralized error handling and consistent API error
+ * responses using the ApiError format.
  * <p>
- * Provides centralized exception handling across all controllers, converting various
- * exception types into standardized ApiResponse objects with appropriate HTTP status codes.
- * Handles resource not found, bad request, authentication, authorization, validation,
- * and general server errors.
- *
- * @since 1.0
+ * Handles the following exceptions:
+ * <li> ResourceNotFoundException: Returns 404 NOT_FOUND
+ * <li> UnauthorizedException: Returns 401 UNAUTHORIZED
+ * <li> ForbiddenException: Returns 403 FORBIDDEN
+ * <li> MethodArgumentNotValidException: Returns 400 BAD_REQUEST with validation errors
+ * <li> General Exception: Returns 500 INTERNAL_SERVER_ERROR as fallback
  */
-@RestControllerAdvice
+@ControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * Handles ResourceNotFoundException by returning a 404 NOT_FOUND response
-     * with a standardized ApiError containing the original exception message.
+     * Handles ResourceNotFoundException by returning a 404 NOT_FOUND response with an ApiError containing the original
+     * exception message and current timestamp.
      *
      * @param ex the ResourceNotFoundException to handle
-     * @return an ApiResponse with HTTP status 404 NOT_FOUND containing the error message
+     * @return a ResponseEntity containing an ApiError with HTTP status 404 NOT_FOUND
      */
     @ExceptionHandler(ResourceNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiResponse<?> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        return ApiResponse.error(ex.getMessage());
+    public ResponseEntity<ApiError> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        ApiError apiError = new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
     }
 
     /**
-     * Handles BadRequestException by returning a 400 BAD_REQUEST response
-     * with a standardized ApiError containing the original exception message.
+     * Handles UnauthorizedException by returning a 401 UNAUTHORIZED response with an ApiError containing the original
+     * exception message and current timestamp.
      *
-     * @param ex the BadRequestException to handle
-     * @return an ApiResponse with HTTP status 400 BAD_REQUEST containing the error message
+     * @param ex the UnauthorizedException to handle
+     * @return a ResponseEntity containing an ApiError with HTTP status 401 UNAUTHORIZED
      */
-    @ExceptionHandler(BadRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<?> handleBadRequestException(BadRequestException ex) {
-        return ApiResponse.error(ex.getMessage());
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiError> handleUnauthorizedException(UnauthorizedException ex) {
+        ApiError apiError = new ApiError(
+                HttpStatus.UNAUTHORIZED.value(),
+                ex.getMessage(),
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.UNAUTHORIZED);
     }
 
     /**
-     * Handles AuthenticationException by returning a 401 UNAUTHORIZED response
-     * with a standardized ApiError containing the original exception message.
+     * Handles ForbiddenException by returning a 403 FORBIDDEN response with an ApiError containing the original
+     * exception message and current timestamp.
      *
-     * @param ex the AuthenticationException to handle
-     * @return an ApiResponse with HTTP status 401 UNAUTHORIZED containing the error message
+     * @param ex the ForbiddenException to handle
+     * @return a ResponseEntity containing an ApiError with HTTP status 403 FORBIDDEN
      */
-    @ExceptionHandler(AuthenticationException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ApiResponse<?> handleAuthenticationException(AuthenticationException ex) {
-        return ApiResponse.error("Authentication failed: " + ex.getMessage());
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbiddenException(ForbiddenException ex) {
+        ApiError apiError = new ApiError(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
     }
 
     /**
-     * Handles AccessDeniedException by returning a 403 FORBIDDEN response
-     * with a standardized ApiError containing the original exception message.
-     *
-     * @param ex the AccessDeniedException to handle
-     * @return an ApiResponse with HTTP status 403 FORBIDDEN containing the error message
-     */
-    @ExceptionHandler(AccessDeniedException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ApiResponse<?> handleAccessDeniedException(AccessDeniedException ex) {
-        return ApiResponse.error("Access denied: " + ex.getMessage());
-    }
-
-    /**
-     * Handles MethodArgumentNotValidException by returning a 400 BAD_REQUEST response
-     * with a standardized ApiError containing a map of field-level validation errors.
+     * Handles MethodArgumentNotValidException by returning a 400 BAD_REQUEST response with an ApiError containing a map
+     * of field names to validation error messages.
      *
      * @param ex the MethodArgumentNotValidException to handle
-     * @return an ApiResponse with HTTP status 400 BAD_REQUEST containing the validation errors
+     * @return a ResponseEntity containing an ApiError with HTTP status 400 BAD_REQUEST
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        return ApiResponse.error("Validation failed", errors);
+
+        ApiError apiError = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation failed",
+                System.currentTimeMillis(),
+                errors
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 
     /**
-     * Handles all uncaught exceptions by returning a 500 INTERNAL_SERVER_ERROR response
-     * with a standardized ApiError containing the original exception message.
-     * <p>
-     * This handler is used as a catch-all for any exceptions that are not explicitly handled
-     * by other exception handlers in this class.
+     * Handles all uncaught exceptions by returning a 500 INTERNAL_SERVER_ERROR response with a generic
+     * error message and current timestamp.
      *
      * @param ex the Exception to handle
-     * @return an ApiResponse with HTTP status 500 INTERNAL_SERVER_ERROR containing the error message
+     * @return a ResponseEntity containing an ApiError with HTTP status 500 INTERNAL_SERVER_ERROR
      */
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<?> handleAllUncaughtException(Exception ex) {
-        return ApiResponse.error("Internal server error: " + ex.getMessage());
+    public ResponseEntity<ApiError> handleAllExceptions(Exception ex) {
+        ApiError apiError = new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal server error",
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
+

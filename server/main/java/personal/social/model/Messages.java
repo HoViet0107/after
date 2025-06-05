@@ -3,7 +3,6 @@ package personal.social.model;
 import jakarta.persistence.*;
 import lombok.*;
 import personal.social.enums.MessageStatus;
-import personal.social.enums.MessageType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,10 +33,6 @@ public class Messages {
     @Enumerated(EnumType.STRING)
     @Column(name = "message_status")
     private MessageStatus status = MessageStatus.SENT;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "message_type", nullable = false)
-    private MessageType messageType;
 
     @Column(name = "reply_to_message_id")
     private Long replyToMessageId;

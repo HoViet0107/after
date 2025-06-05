@@ -49,11 +49,13 @@ public class Utilities {
      * @param participantRepository the repository to use for checking participant data
      * @throws AccessDeniedException if the user is not a participant in the conversation
      */
-    public static boolean isUserHasAccessToConversation(
+    public static void isUserHasAccessToConversation(
             Long userId,
             Long conversationId,
             ConversationParticipantRepository participantRepository
-    ) {
-        return participantRepository.findByUserInConversation(userId, conversationId) != null;
+    ) throws AccessDeniedException {
+        if (participantRepository.findByUserInConversation(userId, conversationId) == null) {
+            throw new AccessDeniedException("User is not a participant in this conversation!");
+        }
     }
 }

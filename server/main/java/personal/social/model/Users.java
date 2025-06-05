@@ -3,13 +3,9 @@ package personal.social.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Represents a user in the system.
@@ -41,7 +37,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Users implements UserDetails {
+public class Users {
     /**
      * Unique identifier for the user.
      */
@@ -123,36 +119,12 @@ public class Users implements UserDetails {
     @JoinColumn(name = "role_id")
     private Roles roles;
 
-    public Users(String email, String s, Collection<? extends GrantedAuthority> authorities) {
+    // Thêm method này để tương thích
+    public Long getId() {
+        return this.id;
     }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
-
-    @Override
-    public String getUsername() {
-        return "";
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+    public void setId(Long id) {
+        this.id = id;
     }
 }

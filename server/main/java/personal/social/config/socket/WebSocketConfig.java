@@ -1,38 +1,36 @@
 package personal.social.config.socket;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.ChannelRegistration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
 
+/**
+ * WebSocket Configuration
+ * Cấu hình WebSocket endpoints và interceptors
+ * Tích hợp với existing JwtUtil và SecurityConfig
+ */
+@Slf4j
 @Configuration
 @EnableWebSocket
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+public class WebSocketConfig implements WebSocketConfigurer {
 
     @Autowired
-    private WebSocketAuthInterceptor webSocketAuthInterceptor;
+    private ChatWebSocketHandler chatWebSocketHandler;
 
     @Autowired
-    private CustomHandshakeHandler customHandshakeHandler;
+    private WebSocketHandshakeInterceptor webSocketHandshakeInterceptor;
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws")
-                .setHandshakeHandler(customHandshakeHandler)
-                .setAllowedOrigins("*")
-                .withSockJS();
-    }
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        log.info("=== REGISTERING WEBSOCKET HANDLERS ===");
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue", "/user");
-        registry.setApplicationDestinationPrefixes("/app");
-        registry.setUserDestinationPrefix("/user");
-    }
+        // Native WebSocket without SockJS
+        registry.addHandler(chatWebSocketHandler, "/ws/chat")
+                .addInterceptors(webSocketHandshakeInterceptor)
+                .setAllowedOriginPatterns("*"); // Remove .withSockJS()
 
-    @Override
-    public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(webSocketAuthInterceptor);
+        log.info("Native WebSocket endpoint registered at: /ws/chat");
+        log.info("=== WEBSOCKET REGISTRATION COMPLETE ===");
     }
 }

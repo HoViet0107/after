@@ -5,9 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.stereotype.Indexed;
 
 import java.time.LocalDateTime;
 
@@ -16,10 +13,6 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@CompoundIndexes({
-        @CompoundIndex(name = "participants", def = "{'participants': 1}"),
-        @CompoundIndex(name = "updatedAt", def = "{'updatedAt': -1}")
-})
 public class Conversations {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +31,6 @@ public class Conversations {
     private LocalDateTime createAt;
 
     @Column(name = "edited_at")
-    @LastModifiedDate
     private LocalDateTime editedAt;
 
     @Column(name = "last_message_id")

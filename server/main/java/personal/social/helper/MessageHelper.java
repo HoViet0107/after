@@ -27,7 +27,7 @@ public class MessageHelper {
      * @param message The Messages entity to convert
      * @return ChatMessageDTO representation of the message
      */
-    public static ChatMessageDTO convertToChatMessageDTO(Messages message) {
+    public static ChatMessageDTO convertToDTO(Messages message) {
         if (message == null) return null;
 
         return ChatMessageDTO.builder()

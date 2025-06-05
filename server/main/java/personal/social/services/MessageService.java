@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import personal.social.dto.message.ChatMessageDTO;
 import personal.social.dto.CursorResponse;
-import personal.social.dto.message.MessageDTO;
 import personal.social.dto.message.ReactionDTO;
 import personal.social.model.Users;
 
@@ -84,6 +83,4 @@ public interface MessageService {
      */
     @Transactional
     void removeReaction(Long messageId, Long userId);
-
-    MessageDTO saveMessage(MessageDTO messageDto, Users sender);
 }

@@ -10,11 +10,10 @@ import org.springframework.web.multipart.MultipartFile;
 import personal.social.config.socket.WebSocketSessionManager;
 import personal.social.dto.message.ChatMessageDTO;
 import personal.social.dto.CursorResponse;
-import personal.social.dto.message.MessageDTO;
+import personal.social.dto.MediaDTO;
 import personal.social.dto.message.MessageProjection;
 import personal.social.dto.message.ReactionDTO;
 import personal.social.enums.MessageStatus;
-import personal.social.exceptions.ResourceNotFoundException;
 import personal.social.helper.CommonHelpers;
 import personal.social.helper.MessageHelper;
 import personal.social.helper.Utilities;
@@ -28,8 +27,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
-import static personal.social.helper.MessageHelper.convertToChatMessageDTO;
 
 @Slf4j
 @Service
@@ -161,7 +158,7 @@ public class MessageServiceImpl implements MessageService {
         }
 
         // HANDLE REACTIONS
-        ChatMessageDTO messageDTO = convertToChatMessageDTO(message);
+        ChatMessageDTO messageDTO = MessageHelper.convertToDTO(message);
         messageDTO.setMedias(MessageHelper.convertMediaToDTO(mediaList));
         // messageDTO.setReactions(MessageHelper.convertReactionsToDTO(reactionRepository.findByMessageId(message.getId())));
 
@@ -204,7 +201,7 @@ public class MessageServiceImpl implements MessageService {
         message.setEditedAt(LocalDateTime.now());
         message = messageRepository.save(message);
 
-        ChatMessageDTO messageDTO = convertToChatMessageDTO(message);
+        ChatMessageDTO messageDTO = MessageHelper.convertToDTO(message);
         messageDTO.setMedias(MessageHelper.convertMediaToDTO(mediaRepository.findByMessageId(messageId)));
         messageDTO.setReactions(MessageHelper.convertReactionsToDTO(reactionRepository.findByMessageId(messageId)));
 
@@ -272,51 +269,5 @@ public class MessageServiceImpl implements MessageService {
             // Thông báo qua WebSocket nếu cần
             // chatWebSocketService.notifyReactionRemoved(messageId, userId);
         }
-    }
-
-    @Override
-    public MessageDTO saveMessage(MessageDTO messageDto, Users sender) {
-        // Kiểm tra quyền truy cập
-        Conversations conversation = conversationRepository.findById(messageDto.getConversationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Conversation", "id", messageDto.getConversationId()));
-
-        boolean isParticipant = Utilities.isUserHasAccessToConversation(sender.getId(), messageDto.getConversationId(), participantRepository);
-        if (!isParticipant) {
-            throw new ResourceNotFoundException("Conversation", "id", messageDto.getConversationId());
-        }
-
-        // Tạo đối tượng Message
-        Messages message = new Messages();
-        message.setMessageContent(messageDto.getContent());
-        message.setSender(sender);
-        message.setConversation(conversation);
-        message.setMessageType(messageDto.getMessageType());
-        message.setSendAt(LocalDateTime.now());
-
-        // Lưu tin nhắn
-        message = helpers.saveEntity(message, messageRepository, "message");
-
-        // Cập nhật last message của cuộc trò chuyện
-        conversation.setLastMessageId(message.getId());
-        conversation.setEditedAt(LocalDateTime.now());
-        helpers.saveEntity(conversation, conversationRepository, "conversation");
-
-        // Tăng unread count cho các thành viên khác
-        // incrementUnreadCount(conversation, sender);
-
-        return convertToMessageDTO(message);
-    }
-    private MessageDTO convertToMessageDTO(Messages message) {
-        MessageDTO dto = new MessageDTO();
-        dto.setId(message.getId());
-        dto.setContent(message.getMessageContent());
-        dto.setSenderId(message.getSender().getId());
-        dto.setSenderName(Utilities.buildFullName(message.getSender()));
-        dto.setConversationId(message.getConversation().getId());
-        dto.setSendAt(message.getSendAt());
-        dto.setMessageType(message.getMessageType());
-        dto.setEditedAt(message.getEditedAt());
-
-        return dto;
     }
 }
