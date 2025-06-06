@@ -3,18 +3,18 @@ package personal.social.shared.infrastructure.monitoring;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class SocialMediaMetrics implements MeterBinder {
 
     private final RedisTemplate<String, Object> redisTemplate;
-
+    private MeterRegistry registry;
     // Counters
     private Counter messagesSentCounter;
     private Counter postsCreatedCounter;
@@ -27,8 +27,8 @@ public class SocialMediaMetrics implements MeterBinder {
     private Timer cacheAccessTimer;
 
     // Gauges
-    private AtomicLong activeUsersGauge = new AtomicLong(0);
-    private AtomicLong activeConversationsGauge = new AtomicLong(0);
+    private final AtomicLong activeUsersGauge = new AtomicLong(0);
+    private final AtomicLong activeConversationsGauge = new AtomicLong(0);
 
     public SocialMediaMetrics(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -36,6 +36,7 @@ public class SocialMediaMetrics implements MeterBinder {
 
     @Override
     public void bindTo(MeterRegistry registry) {
+        this.registry = registry;
         // Counters
         messagesSentCounter = Counter.builder("social.messages.sent.total")
                 .description("Total messages sent")
@@ -67,51 +68,66 @@ public class SocialMediaMetrics implements MeterBinder {
                 .description("Time to access cache")
                 .register(registry);
 
-        // Gauges
-        Gauge.builder("social.users.active")
+        // Gauges - Fixed registration
+        Gauge.builder("social.users.active", this, SocialMediaMetrics::getActiveUserCount)
                 .description("Currently active users")
-                .register(registry, this, SocialMediaMetrics::getActiveUserCount);
+                .strongReference(true) // avoid garbage collection
+                .register(registry);
 
-        Gauge.builder("social.conversations.active")
+        Gauge.builder("social.conversations.active", this, SocialMediaMetrics::getActiveConversationCount)
                 .description("Currently active conversations")
-                .register(registry, this, SocialMediaMetrics::getActiveConversationCount);
+                .strongReference(true) // avoid garbage collection
+                .register(registry);
 
-        Gauge.builder("social.cache.memory.usage")
+        Gauge.builder("social.cache.memory.usage", this, SocialMediaMetrics::getCacheMemoryUsage)
                 .description("Cache memory usage")
-                .register(registry, this, SocialMediaMetrics::getCacheMemoryUsage);
+                .strongReference(true) // avoid garbage collection
+                .register(registry);
     }
 
     // Recording methods
     public void recordMessageSent(String messageType) {
-        messagesSentCounter.increment(Tags.of("message_type", messageType));
+        Counter.builder("social.messages.sent.total")
+                .tag("message_type", messageType)
+                .register(registry)
+                .increment();
     }
 
     public void recordPostCreated(String postType) {
-        postsCreatedCounter.increment(Tags.of("post_type", postType));
+        Counter.builder("social.posts.created.total")
+                .tag("post_type", postType)
+                .register(registry)
+                .increment();
     }
 
     public void recordLike(String contentType) {
-        likesCounter.increment(Tags.of("content_type", contentType));
+        Counter.builder("social.likes.total")
+                .tag("content_type", contentType)
+                .register(registry)
+                .increment();
     }
 
     public void recordComment(String contentType) {
-        commentsCounter.increment(Tags.of("content_type", contentType));
+        Counter.builder("social.comments.total")
+                .tag("content_type", contentType)
+                .register(registry)
+                .increment();
     }
 
     public Timer.Sample startMessageProcessing() {
-        return Timer.start(messageProcessingTimer);
+        return Timer.start();
     }
 
     public Timer.Sample startFeedGeneration() {
-        return Timer.start(feedGenerationTimer);
+        return Timer.start();
     }
 
     public Timer.Sample startCacheAccess() {
-        return Timer.start(cacheAccessTimer);
+        return Timer.start();
     }
 
-    // Gauge value providers
-    private double getActiveUserCount() {
+    // Gauge value providers - Fixed access modifiers
+    public double getActiveUserCount() {
         try {
             Long count = redisTemplate.opsForSet().size("online:users");
             return count != null ? count.doubleValue() : 0.0;
@@ -120,7 +136,7 @@ public class SocialMediaMetrics implements MeterBinder {
         }
     }
 
-    private double getActiveConversationCount() {
+    public double getActiveConversationCount() {
         try {
             return redisTemplate.keys("conversation:active:*").size();
         } catch (Exception e) {
@@ -128,7 +144,7 @@ public class SocialMediaMetrics implements MeterBinder {
         }
     }
 
-    private double getCacheMemoryUsage() {
+    public double getCacheMemoryUsage() {
         try {
             // This would need Redis INFO command implementation
             return 0.0; // Placeholder
@@ -143,5 +159,17 @@ public class SocialMediaMetrics implements MeterBinder {
 
     public void updateActiveConversations(long count) {
         activeConversationsGauge.set(count);
+    }
+
+    public void stopMessageProcessing(Timer.Sample sample) {
+        sample.stop(messageProcessingTimer);
+    }
+
+    public void stopFeedGeneration(Timer.Sample sample) {
+        sample.stop(feedGenerationTimer);
+    }
+
+    public void stopCacheAccess(Timer.Sample sample) {
+        sample.stop(cacheAccessTimer);
     }
 }

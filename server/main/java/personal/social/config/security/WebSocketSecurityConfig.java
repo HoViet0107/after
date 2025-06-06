@@ -7,8 +7,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.messaging.Message;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.web.socket.EnableWebSocketSecurity;
-
-import javax.crypto.spec.SecretKeySpec;
+import org.springframework.security.messaging.access.intercept.MessageMatcherDelegatingAuthorizationManager;
 
 @Configuration
 @EnableWebSocketSecurity
@@ -16,8 +15,9 @@ import javax.crypto.spec.SecretKeySpec;
 public class WebSocketSecurityConfig {
 
     @Bean
-    public AuthorizationManager<Message<?>> messageAuthorizationManager(
-            MessageMatcherDelegatingAuthorizationManager.Builder messages) {
+    public AuthorizationManager<Message<?>> messageAuthorizationManager() {
+        MessageMatcherDelegatingAuthorizationManager.Builder messages =
+                MessageMatcherDelegatingAuthorizationManager.builder();
 
         messages
                 // Allow connection attempts
@@ -38,12 +38,5 @@ public class WebSocketSecurityConfig {
                 .anyMessage().denyAll();
 
         return messages.build();
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        String secretKey = "z0UPwGEn0XiT35ZIQwq1vtGjMwdU6Zpd"; // Same as in JwtTokenProvider
-        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(keySpec).build();
     }
 }

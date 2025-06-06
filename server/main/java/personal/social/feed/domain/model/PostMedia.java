@@ -12,7 +12,7 @@ import java.util.Objects;
 @Setter
 @AllArgsConstructor
 @Builder
-class PostMedia {
+public class PostMedia {
     private final MediaId id;
     private final PostId postId;
     private final String url;

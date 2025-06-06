@@ -19,52 +19,38 @@ public interface PostMapper {
 
     PostMapper INSTANCE = Mappers.getMapper(PostMapper.class);
 
-    // Mobile mapping - optimized for bandwidth
-    @Mapping(target = "id", source = "post.id.value")
-    @Mapping(target = "content", source = "post.content.text")
-    @Mapping(target = "authorUsername", source = "post.author.username")
-    @Mapping(target = "authorAvatarUrl", source = "post.author.profile.avatarUrl")
-    @Mapping(target = "createdAt", source = "post.createdAt")
-    @Mapping(target = "likeCount", expression = "java(post.getEngagement().getLikeCount())")
-    @Mapping(target = "commentCount", expression = "java(post.getEngagement().getCommentCount())")
-    @Mapping(target = "isLikedByCurrentUser", ignore = true) // Set in service layer
-    @Mapping(target = "isBookmarked", ignore = true) // Set in service layer
+    // Mobile mapping - simplified
+    @Mapping(target = "id", source = "id.value")
+    @Mapping(target = "content", source = "content.text")
+    @Mapping(target = "createdAt", source = "createdAt")
+    @Mapping(target = "likeCount", expression = "java(post.getLikes().size())")
+    @Mapping(target = "commentCount", expression = "java(post.getComments().size())")
+    @Mapping(target = "isLikedByCurrentUser", constant = "false") // Set in service layer
+    @Mapping(target = "isBookmarked", constant = "false") // Set in service layer
     @Mapping(target = "firstMediaUrl", expression = "java(getFirstMediaUrl(post))")
     @Mapping(target = "mediaType", expression = "java(getMediaType(post))")
+    @Mapping(target = "authorUsername", constant = "unknown")
+    @Mapping(target = "authorAvatarUrl", constant = "")
     PostMobileDTO toMobileDTO(Post post);
 
-    // Web mapping - full featured
-    @Mapping(target = "id", source = "post.id.value")
-    @Mapping(target = "content", source = "post.content.text")
-    @Mapping(target = "author", source = "post.author")
-    @Mapping(target = "createdAt", source = "post.createdAt")
-    @Mapping(target = "updatedAt", source = "post.updatedAt")
-    @Mapping(target = "engagement", source = "post.engagement")
-    @Mapping(target = "media", source = "post.media")
-    @Mapping(target = "location", source = "post.location")
+    // Web mapping - simplified
+    @Mapping(target = "id", source = "id.value")
+    @Mapping(target = "content", source = "content.text")
+    @Mapping(target = "createdAt", source = "createdAt")
+    @Mapping(target = "updatedAt", source = "editedAt")
+    @Mapping(target = "engagement", source = "engagement")
+    @Mapping(target = "media", source = "media")
+    @Mapping(target = "location", source = "location")
     @Mapping(target = "hashtags", expression = "java(extractHashtags(post))")
-    @Mapping(target = "taggedUsers", source = "post.taggedUsers")
-    @Mapping(target = "topComments", expression = "java(getTopComments(post, 3))")
-    @Mapping(target = "isLikedByCurrentUser", ignore = true) // Set in service layer
-    @Mapping(target = "isBookmarked", ignore = true) // Set in service layer
-    @Mapping(target = "isFollowingAuthor", ignore = true) // Set in service layer
-    @Mapping(target = "visibility", source = "post.visibility")
+    @Mapping(target = "isLikedByCurrentUser", constant = "false") // Set in service layer
+    @Mapping(target = "isBookmarked", constant = "false") // Set in service layer
+    @Mapping(target = "isFollowingAuthor", constant = "false") // Set in service layer
+    @Mapping(target = "visibility", source = "visibility")
+    @Mapping(target = "author", ignore = true) // Set manually
+    @Mapping(target = "taggedUsers", ignore = true) // Set manually
+    @Mapping(target = "topComments", ignore = true)
+    // Set manually
     PostWebDTO toWebDTO(Post post);
-
-    // Context-aware mapping with current user
-    @Mapping(target = "isLikedByCurrentUser",
-            expression = "java(isLikedByUser(post, currentUserId))")
-    @Mapping(target = "isBookmarked",
-            expression = "java(isBookmarkedByUser(post, currentUserId))")
-    PostMobileDTO toMobileDTO(Post post, @Context Long currentUserId);
-
-    @Mapping(target = "isLikedByCurrentUser",
-            expression = "java(isLikedByUser(post, currentUserId))")
-    @Mapping(target = "isBookmarked",
-            expression = "java(isBookmarkedByUser(post, currentUserId))")
-    @Mapping(target = "isFollowingAuthor",
-            expression = "java(isFollowingAuthor(post, currentUserId))")
-    PostWebDTO toWebDTO(Post post, @Context Long currentUserId);
 
     // Helper methods
     default String getFirstMediaUrl(Post post) {
@@ -80,38 +66,5 @@ public interface PostMapper {
         return post.getHashtags().stream()
                 .map(hashtag -> hashtag.getValue())
                 .collect(java.util.stream.Collectors.toList());
-    }
-
-    default List<CommentPreviewDTO> getTopComments(Post post, int limit) {
-        return post.getComments().stream()
-                .sorted((c1, c2) -> c2.getCreatedAt().compareTo(c1.getCreatedAt()))
-                .limit(limit)
-                .map(this::toCommentPreview)
-                .collect(java.util.stream.Collectors.toList());
-    }
-
-    default CommentPreviewDTO toCommentPreview(PostComment comment) {
-        CommentPreviewDTO dto = new CommentPreviewDTO();
-        dto.setId(comment.getId().value());
-        dto.setContent(String.valueOf(comment.getContent()));
-        dto.setAuthorUsername(comment.getAuthor().getUsername());
-        dto.setCreatedAt(comment.getCreatedAt());
-        dto.setLikeCount(comment.getEngagement().likeCount());
-        return dto;
-    }
-
-    default boolean isLikedByUser(Post post, Long userId) {
-        return post.getLikes().stream()
-                .anyMatch(like -> like.getUser().getId().getValue().equals(userId));
-    }
-
-    default boolean isBookmarkedByUser(Post post, Long userId) {
-        return post.getBookmarks().stream()
-                .anyMatch(bookmark -> bookmark.getUser().getId().getValue().equals(userId));
-    }
-
-    default boolean isFollowingAuthor(Post post, Long userId) {
-        // This would need to be injected from service layer
-        return false; // Placeholder
     }
 }

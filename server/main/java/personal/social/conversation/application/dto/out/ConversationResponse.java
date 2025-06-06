@@ -21,7 +21,7 @@ public record ConversationResponse(
                 conversation.isGroupChat(),
                 conversation.getParticipantCount(),
                 conversation.getCreatedAt(),
-                conversation.getUpdatedAt()
+                conversation.getEditedAt()
         );
     }
 }

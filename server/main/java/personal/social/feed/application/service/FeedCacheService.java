@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import personal.social.feed.infrastructure.persistence.repository.PostJpaRepository;
 
 import java.time.Duration;
+import java.util.Collections;
 
 @Service
 public class FeedCacheService {
@@ -28,7 +29,7 @@ public class FeedCacheService {
 
         // Calculate and cache
         long count = followingOnly ?
-                postRepository.countByFollowedUsers(userId) :
+                postRepository.countByFollowedUsers(Collections.singleton(userId)) :
                 postRepository.countAllActive();
 
         redisTemplate.opsForValue().set(cacheKey, count, Duration.ofMinutes(15));

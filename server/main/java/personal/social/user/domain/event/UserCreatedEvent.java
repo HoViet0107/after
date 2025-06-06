@@ -1,5 +1,8 @@
 package personal.social.user.domain.event;
 
+import personal.social.shared.domain.DomainEvent;
+
+import java.time.LocalDateTime;
 
 /**
  * Event that is published when a new user is created in the system.
@@ -10,5 +13,16 @@ package personal.social.user.domain.event;
  * @param userId   The unique identifier of the created user
  * @param email    The email address of the created user
  * @param fullName The full name of the created user
+ * @param occurredOn The timestamp when the event occurred
  */
-public record UserCreatedEvent(String userId, String email, String fullName) {}
+public record UserCreatedEvent(
+        String userId,
+        String email,
+        String fullName,
+        LocalDateTime occurredOn
+) implements DomainEvent {
+
+    public UserCreatedEvent(String userId, String email, String fullName) {
+        this(userId, email, fullName, LocalDateTime.now());
+    }
+}

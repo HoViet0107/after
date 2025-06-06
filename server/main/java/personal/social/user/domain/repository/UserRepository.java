@@ -14,5 +14,11 @@ public interface UserRepository {
     List<Users> findOnlineUsers();
     void delete(UserId id);
     boolean existsByEmail(Email email);
-    List<String> findActiveUserIds();
+
+    // Added missing method
+    default List<String> findActiveUserIds() {
+        return findOnlineUsers().stream()
+                .map(user -> user.getId().value())
+                .toList();
+    }
 }

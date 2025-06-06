@@ -70,7 +70,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
                 .avatarUrl(conversation.getAvatarUrl())
                 .isGroupChat(conversation.isGroupChat())
                 .createdAt(conversation.getCreatedAt())
-                .updatedAt(conversation.getUpdatedAt())
+                .editedAt(conversation.getEditedAt())
                 .lastMessageId(conversation.getLastMessageId())
                 .build();
 
@@ -111,7 +111,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
                 .avatarUrl(entity.getAvatarUrl())
                 .isGroupChat(entity.isGroupChat())
                 .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
+                .editedAt(entity.getEditedAt())
                 .lastMessageId(entity.getLastMessageId())
                 .participants(participants)
                 .build();

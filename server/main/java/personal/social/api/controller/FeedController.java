@@ -3,6 +3,7 @@ package personal.social.api.controller;
 import personal.social.api.dto.FeedResponse;
 import personal.social.feed.application.dto.in.CreatePostRequest;
 import personal.social.feed.application.dto.PostWebDTO;
+import personal.social.feed.application.dto.out.CreatePostResponse;
 import personal.social.feed.application.service.FeedService;
 import personal.social.feed.application.dto.*;
 import personal.social.shared.application.dto.base.PaginationRequestDTO;

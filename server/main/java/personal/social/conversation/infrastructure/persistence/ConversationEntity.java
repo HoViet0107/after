@@ -2,7 +2,6 @@ package personal.social.conversation.infrastructure.persistence;
 
 import jakarta.persistence.*;
 import lombok.*;
-import personal.social.conversation.domain.model.vo.ParticipantRole;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -29,8 +28,8 @@ public class ConversationEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    @Column(name = "edited_at", nullable = false)
+    private LocalDateTime editedAt;
 
     @Column(name = "last_message_id")
     private String lastMessageId;
@@ -41,11 +40,11 @@ public class ConversationEntity {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        editedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        editedAt = LocalDateTime.now();
     }
 }

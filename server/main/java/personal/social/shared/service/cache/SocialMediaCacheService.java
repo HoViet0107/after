@@ -5,6 +5,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import personal.social.shared.application.dto.cache.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

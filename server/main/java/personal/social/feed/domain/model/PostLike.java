@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
-class PostLike {
+public class PostLike {
     private final LikeId id;
     private final UserId userId;
     private final PostId postId;

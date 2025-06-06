@@ -1,6 +1,9 @@
 package personal.social.api.controller;
 
+import personal.social.feed.application.dto.in.MediaMessageRequest;
+import personal.social.message.application.dto.in.ConversationHistoryRequest;
 import personal.social.message.application.dto.in.SendMessageRequest;
+import personal.social.message.application.dto.out.ConversationHistoryResponse;
 import personal.social.message.application.dto.out.SendMessageResponse;
 import personal.social.message.application.service.RealTimeChatService;
 import personal.social.shared.infrastructure.security.RateLimit;

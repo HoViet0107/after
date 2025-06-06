@@ -3,6 +3,7 @@ package personal.social.message.application.service;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import personal.social.message.application.dto.PresenceEvent;
 import personal.social.message.application.dto.UserPresence;
 
 import java.time.Duration;

@@ -2,6 +2,7 @@ package personal.social.config.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -21,22 +22,6 @@ import personal.social.message.infrastructure.redis.TypingIndicatorSubscriber;
 
 import java.time.Duration;
 
-/**
- * Redis configuration class that provides beans for Redis connectivity and operations.
- * This class configures the Redis connection settings, serialization strategies, and 
- * message listener container for pub/sub functionality.
- * 
- * <p>The configuration includes:
- * <ul>
- *   <li>Redis connection to a local server (localhost:6379)</li>
- *   <li>RedisTemplate with String keys and JSON serialized values</li>
- *   <li>Message listener container for chat messages, typing indicators, and user presence</li>
- * </ul>
- * 
- * @see org.springframework.data.redis.connection.RedisConnectionFactory
- * @see org.springframework.data.redis.core.RedisTemplate
- * @see org.springframework.data.redis.listener.RedisMessageListenerContainer
- */
 @Configuration
 public class RedisConfig {
 
@@ -48,8 +33,8 @@ public class RedisConfig {
         config.setPort(6379);
         config.setDatabase(0);
 
-        // Connection pool configuration
-        GenericObjectPoolConfig<?> poolConfig = new GenericObjectPoolConfig<>();
+        // Connection pool configuration - Fixed import
+        GenericObjectPoolConfig<Object> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxTotal(20);
         poolConfig.setMaxIdle(10);
         poolConfig.setMinIdle(5);

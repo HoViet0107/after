@@ -60,7 +60,7 @@ public class CreateConversationUseCase {
                 }
             });
         } else {
-            conversation = Conversation.createDirectMessage(
+            conversation = Conversation.createDirectConversation(
                     id,
                     createdBy,
                     UserId.of(request.participantIds().getFirst())

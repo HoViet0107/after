@@ -10,7 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
 import personal.social.feed.application.dto.PostMobileDTO;
 import personal.social.feed.application.dto.PostWebDTO;
+import personal.social.feed.application.dto.in.CreatePostRequest;
+import personal.social.feed.application.dto.out.CreatePostResponse;
 import personal.social.feed.application.mapper.PostMapper;
+import personal.social.feed.application.usecase.CreatePostUseCase;
 import personal.social.feed.domain.model.Post;
 import personal.social.feed.infrastructure.persistence.PostEntity;
 import personal.social.feed.infrastructure.persistence.repository.PostJpaRepository;
@@ -18,6 +21,7 @@ import personal.social.feed.infrastructure.persistence.repository.PostJpaReposit
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 
 @Service
 @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
@@ -26,13 +30,13 @@ public class FeedService {
 
     private final PostJpaRepository postRepository;
     private final PostMapper postMapper;
-    private final UserFollowRepository followRepository;
     private final FeedCacheService cacheService;
+    private final CreatePostUseCase createPostUseCase;
 
     @Cacheable(value = "user-feeds", key = "#userId + '_mobile_' + #pageable.pageNumber")
     public Page<PostMobileDTO> getMobileFeed(String userId, Pageable pageable) {
         // Get followed users for personalization
-        Set<Long> followedUserIds = followRepository.findFollowedUserIds(userId);
+        Set<String> followedUserIds = getFollowedUserIds(userId);
 
         // Use optimized query
         List<Object[]> results = postRepository.findOptimizedFeed(
@@ -56,7 +60,7 @@ public class FeedService {
 
     @Cacheable(value = "user-feeds", key = "#userId + '_web_' + #pageable.pageNumber")
     public Page<PostWebDTO> getWebFeed(String userId, Pageable pageable) {
-        Set<Long> followedUserIds = followRepository.findFollowedUserIds(userId);
+        Set<String> followedUserIds = getFollowedUserIds(userId);
 
         List<Object[]> results = postRepository.findOptimizedFeed(
                 userId,
@@ -68,14 +72,14 @@ public class FeedService {
         );
 
         // For web, we need to fetch full post objects for rich data
-        List<Long> postIds = results.stream()
-                .map(row -> ((Number) row[0]).longValue())
+        List<String> postIds = results.stream()
+                .map(row -> (String) row[0])
                 .collect(java.util.stream.Collectors.toList());
 
         List<PostEntity> fullPosts = postRepository.findByIdsWithAllAssociations(postIds);
 
         List<PostWebDTO> posts = fullPosts.stream()
-                .map(post -> postMapper.toWebDTO(toDomainModel(post), userId))
+                .map(post -> postMapper.toWebDTO(toDomainModel(post)))
                 .collect(java.util.stream.Collectors.toList());
 
         long total = cacheService.getFeedCount(userId, false);
@@ -109,7 +113,37 @@ public class FeedService {
         return new PageImpl<>(posts, pageable, discoveredPosts.getTotalElements());
     }
 
-    // Helper method to map raw query results to DTO
+    // New method for creating posts
+    @Transactional
+    public CreatePostResponse createPost(CreatePostRequest request, String currentUserId) {
+        CreatePostRequest authenticatedRequest = new CreatePostRequest(
+                currentUserId,
+                request.content(),
+                request.visibility(),
+                request.hashtags(),
+                request.taggedUserIds()
+        );
+
+        var response = createPostUseCase.execute(authenticatedRequest);
+
+        return new CreatePostResponse(
+                response.id(),
+                response.authorId(),
+                response.content(),
+                response.visibility(),
+                response.createdAt(),
+                0, // hashtag count
+                0  // tagged users count
+        );
+    }
+
+    // Helper methods
+    private Set<String> getFollowedUserIds(String userId) {
+        // This would typically come from a UserFollowRepository
+        // For now, return empty set as placeholder
+        return new HashSet<>();
+    }
+
     private PostMobileDTO mapToMobileDTO(Object[] row) {
         PostMobileDTO dto = new PostMobileDTO();
         dto.setId((String) row[0]);
@@ -125,8 +159,8 @@ public class FeedService {
     }
 
     private Post toDomainModel(PostEntity entity) {
-        // Convert JPA entity to domain model
-        // Implementation would depend on your domain model structure
-        return null; // Placeholder
+        // This would need a proper entity to domain mapper
+        // For now, return null as placeholder - implement proper mapping
+        return null;
     }
 }

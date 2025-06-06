@@ -1,9 +1,12 @@
 package personal.social.shared.domain;
 
+import lombok.experimental.SuperBuilder;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@SuperBuilder(toBuilder = true)
 public abstract class AggregateRoot<T> {
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 

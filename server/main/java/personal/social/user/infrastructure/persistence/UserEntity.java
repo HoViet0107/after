@@ -24,74 +24,43 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserEntity {
-    /**
-     * @Id marks this as the entity's primary key
-     * @GeneratedValue specifies that the ID is auto-generated
-     */
     @Id
     @Column(name = "id", nullable = false, length = 36)
     private String id;
 
-    /**
-     * User's unique email address
-     * Used as a unique identifier for the user in addition to the ID
-     */
     @Column(unique = true, nullable = false)
     private String email;
 
-    /**
-     * User's first name
-     */
+    @Column(name = "password", nullable = false)
+    private String passwordHash;
+
     @Column(nullable = false)
     private String firstName;
 
-    /**
-     * User's middle name
-     */
     @Column(nullable = false)
     private String middleName;
 
-    /**
-     * User's last name
-     */
     @Column(nullable = false)
     private String lastName;
 
-    /**
-     * Optional biography/description of the user
-     */
     private String bio;
 
-    /**
-     * URL reference to the user's profile picture
-     */
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    /**
-     * Timestamp when the user account was created
-     * Automatically set during entity creation
-     */
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Timestamp when the user was last active on the platform
-     * Updated whenever user activity is detected
-     */
     @Column(name = "last_active_at", nullable = false)
     private LocalDateTime lastActiveAt;
 
-    // Constructors
-    /**
-     * Creates a new user entity with the specified details.
-     *
-     * @param email     User's email address
-     * @param firstName User's first name
-     * @param lastName  User's last name
-     * @param bio       User's biography
-     * @param avatarUrl URL to user's avatar image
-     */
+    // Added missing fields
+    @Column(name = "status", nullable = false)
+    private String status = "ACTIVE";
+
+    @Column(name = "is_online", nullable = false)
+    private Boolean isOnline = false;
+
     public UserEntity(String email, String firstName, String lastName,
                       String bio, String avatarUrl) {
         this.email = email;

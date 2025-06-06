@@ -35,7 +35,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Use Redis as message broker for clustering support
+        // Use simple message broker instead of STOMP relay for easier setup
+        registry.enableSimpleBroker("/topic", "/queue", "/user")
+                .setHeartbeatValue(new long[]{10000, 10000});
+
+        // Alternative: If you want to use Redis as message broker
+        /*
         registry.enableStompBrokerRelay("/topic", "/queue", "/user")
                 .setRelayHost("localhost")
                 .setRelayPort(61613) // ActiveMQ STOMP port
@@ -43,10 +48,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setClientPasscode("guest")
                 .setSystemLogin("guest")
                 .setSystemPasscode("guest")
-                .setHeartbeatValue(new long[]{10000, 10000})
                 .setVirtualHost("/")
                 .setUserDestinationBroadcast("/topic/unresolved-user-destination")
                 .setUserRegistryBroadcast("/topic/simp-user-registry");
+        */
 
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");

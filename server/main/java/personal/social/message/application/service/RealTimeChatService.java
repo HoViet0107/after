@@ -2,7 +2,10 @@ package personal.social.message.application.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import personal.social.feed.application.dto.in.MediaMessageRequest;
+import personal.social.message.application.dto.in.ConversationHistoryRequest;
 import personal.social.message.application.dto.in.SendMessageRequest;
+import personal.social.message.application.dto.out.ConversationHistoryResponse;
 import personal.social.message.application.dto.out.SendMessageResponse;
 import personal.social.message.domain.model.*;
 import personal.social.message.domain.model.enums.MessageType;
@@ -119,5 +122,13 @@ public class RealTimeChatService {
         } catch (Exception e) {
             log.error("Error marking message as read: {}", e.getMessage(), e);
         }
+    }
+
+    public ConversationHistoryResponse getConversationHistory(ConversationHistoryRequest request) {
+        return null;
+    }
+
+    public SendMessageResponse sendMediaMessage(MediaMessageRequest request) {
+        return null;
     }
 }

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
-class PostBookmark {
+public class PostBookmark {
     private final BookmarkId id;
     private final UserId userId;
     private final PostId postId;

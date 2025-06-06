@@ -1,4 +1,4 @@
-package personal.social.user.infrastructure.persistence;
+package personal.social.user.infrastructure.persistence.repository;
 
 import org.springframework.stereotype.Repository;
 
@@ -9,6 +9,7 @@ import personal.social.user.domain.model.UserProfile;
 import personal.social.user.domain.model.Users;
 import personal.social.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import personal.social.user.infrastructure.persistence.UserEntity;
 
 import java.util.List;
 import java.util.Optional;
