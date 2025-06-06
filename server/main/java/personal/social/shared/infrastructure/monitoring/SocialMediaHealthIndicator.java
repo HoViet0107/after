@@ -1,21 +1,18 @@
 package personal.social.shared.infrastructure.monitoring;
 
-import org.springframework.boot.actuator.health.Health;
-import org.springframework.boot.actuator.health.HealthIndicator;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class SocialMediaHealthIndicator implements HealthIndicator {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final SocialMediaMetrics metrics;
 
-    public SocialMediaHealthIndicator(RedisTemplate<String, Object> redisTemplate,
-                                      SocialMediaMetrics metrics) {
-        this.redisTemplate = redisTemplate;
-        this.metrics = metrics;
-    }
 
     @Override
     public Health health() {

@@ -2,6 +2,7 @@ package personal.social.user.infrastructure.persistence;
 
 import org.springframework.stereotype.Repository;
 
+import personal.social.user.domain.model.enums.UserStatus;
 import personal.social.user.domain.model.vo.Email;
 import personal.social.user.domain.model.vo.UserId;
 import personal.social.user.domain.model.UserProfile;
@@ -9,6 +10,7 @@ import personal.social.user.domain.model.Users;
 import personal.social.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,7 +24,6 @@ import java.util.Optional;
  * The implementation relies on UserJpaRepository for actual database interactions
  * and provides mapping methods to convert between domain and persistence models.
  *
- * @author Hoviet
  * @see UserRepository
  * @see UserJpaRepository
  * @see Users
@@ -54,6 +55,14 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public List<Users> findOnlineUsers() {
+        return jpaRepository.findAllOnlineUsers()
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public void delete(UserId id) {
         jpaRepository.deleteById(id.value());
     }
@@ -64,36 +73,23 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     // Mapping methods
-
-    /**
-     * Converts a domain User object to a JPA UserEntity for persistence.
-     *
-     * @param user the domain user object to convert
-     * @return UserEntity ready for JPA operations
-     * @throws IllegalArgumentException if user is null
-     */
     private UserEntity toEntity(Users user) {
         UserEntity entity = new UserEntity();
-        if (user.getId() != null) {
-            entity.setId(user.getId().value());
-        }
+        entity.setId(user.getId().value());
         entity.setEmail(user.getEmail().value());
+        entity.setPasswordHash(user.getPasswordHash());
         entity.setFirstName(user.getProfile().getFirstName());
+        entity.setMiddleName(user.getProfile().getMiddleName());
         entity.setLastName(user.getProfile().getLastName());
         entity.setBio(user.getProfile().getBio());
         entity.setAvatarUrl(user.getProfile().getAvatarUrl());
+        entity.setStatus(user.getStatus().name());
+        entity.setIsOnline(user.isOnline());
         entity.setCreatedAt(user.getCreatedAt());
         entity.setLastActiveAt(user.getLastActiveAt());
         return entity;
     }
 
-    /**
-     * Converts a JPA UserEntity to a domain User object.
-     *
-     * @param entity the JPA entity to convert
-     * @return Users domain object
-     * @throws IllegalArgumentException if entity is null or has invalid data
-     */
     private Users toDomain(UserEntity entity) {
         UserProfile profile = new UserProfile(
                 entity.getFirstName(),
@@ -103,11 +99,16 @@ public class UserRepositoryImpl implements UserRepository {
                 entity.getAvatarUrl()
         );
 
-        Users user = Users.create(
-                UserId.of(entity.getId()),
-                Email.of(entity.getEmail()),
-                profile
-        );
+        Users user = Users.builder()
+                .id(UserId.of(entity.getId()))
+                .email(Email.of(entity.getEmail()))
+                .profile(profile)
+                .passwordHash(entity.getPasswordHash())
+                .status(UserStatus.valueOf(entity.getStatus()))
+                .isOnline(entity.getIsOnline())
+                .createdAt(entity.getCreatedAt())
+                .lastActiveAt(entity.getLastActiveAt())
+                .build();
 
         return user;
     }

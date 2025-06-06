@@ -1,24 +1,23 @@
 package personal.social.shared.service.cache;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import personal.social.conversation.domain.repository.ConversationRepository;
+import personal.social.feed.domain.repository.PostRepository;
+import personal.social.user.domain.repository.UserRepository;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@RequiredArgsConstructor
 public class CacheWarmingService {
 
     private final SocialMediaCacheService cacheService;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
-
-    public CacheWarmingService(SocialMediaCacheService cacheService,
-                               UserRepository userRepository,
-                               PostRepository postRepository) {
-        this.cacheService = cacheService;
-        this.userRepository = userRepository;
-        this.postRepository = postRepository;
-    }
+    private final ConversationRepository conversationRepository;
 
     @Scheduled(fixedRate = 300000) // Every 5 minutes
     public void warmFrequentlyAccessedData() {

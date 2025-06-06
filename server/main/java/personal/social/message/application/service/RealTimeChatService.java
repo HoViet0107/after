@@ -1,8 +1,9 @@
 package personal.social.message.application.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import personal.social.message.application.dto.in.SendMessageRequest;
 import personal.social.message.application.dto.out.SendMessageResponse;
-import personal.social.message.domain.exception.MessageNotFoundException;
 import personal.social.message.domain.model.*;
 import personal.social.message.domain.model.enums.MessageType;
 import personal.social.message.domain.model.vo.ConversationId;
@@ -15,86 +16,108 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import personal.social.user.domain.model.vo.UserId;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
 @Transactional
+@Slf4j
+@RequiredArgsConstructor
 public class RealTimeChatService {
 
     private final MessageRepository messageRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final SimpMessagingTemplate messagingTemplate;
-    private final PresenceService presenceService;
-
-    public RealTimeChatService(MessageRepository messageRepository,
-                               RedisTemplate<String, Object> redisTemplate,
-                               SimpMessagingTemplate messagingTemplate,
-                               PresenceService presenceService) {
-        this.messageRepository = messageRepository;
-        this.redisTemplate = redisTemplate;
-        this.messagingTemplate = messagingTemplate;
-        this.presenceService = presenceService;
-    }
 
     public SendMessageResponse sendMessage(SendMessageRequest request) {
-        // 1. Create domain object
-        ChatMessage message = ChatMessage.create(
-                MessageId.generate(),
-                ConversationId.of(request.conversationId()),
-                UserId.of(request.senderId()),
-                MessageContent.of(request.content()),
-                MessageType.valueOf(request.type()),
-                request.replyToId() != null ? MessageId.of(request.replyToId()) : null
-        );
+        try {
+            // 1. Create domain object
+            ChatMessage message = ChatMessage.create(
+                    MessageId.generate(),
+                    ConversationId.of(request.conversationId()),
+                    UserId.of(request.senderId()),
+                    MessageContent.of(request.content()),
+                    MessageType.valueOf(request.type()),
+                    request.replyToId() != null ? MessageId.of(request.replyToId()) : null
+            );
 
-        // 2. Save to database
-        ChatMessage savedMessage = messageRepository.save(message);
+            // 2. Save to database
+            ChatMessage savedMessage = messageRepository.save(message);
 
-        // 3. Publish to Redis for cross-server broadcasting
-        MessageEvent messageEvent = new MessageEvent(
-                savedMessage.getId().value(),
-                savedMessage.getConversationId().value(),
-                savedMessage.getSenderId().value(),
-                savedMessage.getContent().text(),
-                savedMessage.getType().name(),
-                savedMessage.getTimestamp(),
-                savedMessage.getReplyToId() != null ? savedMessage.getReplyToId().value() : null
-        );
+            // 3. Cache recent message
+            cacheRecentMessage(savedMessage);
 
-        String channel = "chat.message." + savedMessage.getConversationId().value();
-        redisTemplate.convertAndSend(channel, messageEvent);
+            // 4. Create message event
+            MessageEvent messageEvent = new MessageEvent(
+                    savedMessage.getId().value(),
+                    savedMessage.getConversationId().value(),
+                    savedMessage.getSenderId().value(),
+                    savedMessage.getContent().text(),
+                    savedMessage.getType().name(),
+                    savedMessage.getSentAt(),
+                    savedMessage.getReplyToId() != null ? savedMessage.getReplyToId().value() : null
+            );
 
-        // 4. Send to local WebSocket clients
-        messagingTemplate.convertAndSend(
-                "/topic/conversation/" + savedMessage.getConversationId().value(),
-                messageEvent
-        );
+            // 5. Publish to Redis for cross-server broadcasting (async)
+            String channel = "chat.message." + savedMessage.getConversationId().value();
+            redisTemplate.convertAndSend(channel, messageEvent);
 
-        return new SendMessageResponse(
-                savedMessage.getId().value(),
-                savedMessage.getTimestamp(),
-                savedMessage.getStatus().name()
-        );
+            // 6. Send to local WebSocket clients immediately
+            messagingTemplate.convertAndSend(
+                    "/topic/conversation/" + savedMessage.getConversationId().value(),
+                    messageEvent
+            );
+
+            // 7. Update conversation's last message
+            updateConversationLastMessage(savedMessage.getConversationId().value(), savedMessage.getId().value());
+
+            log.info("Message sent successfully: {}", savedMessage.getId().value());
+
+            return new SendMessageResponse(
+                    savedMessage.getId().value(),
+                    savedMessage.getSentAt(),
+                    savedMessage.getStatus().name()
+            );
+
+        } catch (Exception e) {
+            log.error("Error sending message: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to send message", e);
+        }
+    }
+
+    private void cacheRecentMessage(ChatMessage message) {
+        String key = "recent:messages:" + message.getConversationId().value();
+
+        // Store in Redis list, keep only last 50 messages
+        redisTemplate.opsForList().leftPush(key, message);
+        redisTemplate.opsForList().trim(key, 0, 49);
+        redisTemplate.expire(key, Duration.ofHours(24));
+    }
+
+    private void updateConversationLastMessage(String conversationId, String messageId) {
+        String key = "conversation:" + conversationId + ":last_message";
+        redisTemplate.opsForValue().set(key, messageId, Duration.ofDays(30));
     }
 
     public void markMessageAsRead(String messageId, String userId) {
-        MessageId msgId = MessageId.of(messageId);
-        UserId uId = UserId.of(userId);
+        try {
+            MessageId msgId = MessageId.of(messageId);
+            UserId uId = UserId.of(userId);
 
-        ChatMessage message = messageRepository.findById(msgId)
-                .orElseThrow(() -> new MessageNotFoundException("Message not found: " + messageId));
+            ChatMessage message = messageRepository.findById(msgId)
+                    .orElseThrow(() -> new RuntimeException("Message not found: " + messageId));
 
-        message.markAsRead();
-        messageRepository.save(message);
+            message.markAsRead(uId);
+            messageRepository.save(message);
 
-        // Notify sender that message was read
-        ReadReceiptEvent readReceipt = new ReadReceiptEvent(
-                messageId,
-                userId,
-                LocalDateTime.now()
-        );
+            // Cache read status
+            String readKey = "message:" + messageId + ":read_by:" + userId;
+            redisTemplate.opsForValue().set(readKey, LocalDateTime.now(), Duration.ofDays(7));
 
-        String channel = "chat.read." + message.getConversationId().value();
-        redisTemplate.convertAndSend(channel, readReceipt);
+            log.info("Message marked as read: {} by user: {}", messageId, userId);
+
+        } catch (Exception e) {
+            log.error("Error marking message as read: {}", e.getMessage(), e);
+        }
     }
 }

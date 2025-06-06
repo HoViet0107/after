@@ -21,7 +21,7 @@ import java.util.*;
 
 @Getter
 @Setter
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class PostComment extends AggregateRoot<CommentId> {
     private static final int MAX_MEDIA_COUNT = 4;
 
@@ -52,21 +52,33 @@ public class PostComment extends AggregateRoot<CommentId> {
     private final Set<CommentLike> likes;
     private final Set<UserId> taggedUsers;
 
-    // Custom builder method để add domain event creation
-    public static PostCommentBuilder builder() {
-        return new PostCommentBuilderImpl() {
-            @Override
-            public PostComment build() {
-                PostComment comment = super.build();
-                // Add domain event after creation
-                comment.addDomainEvent(new CommentCreatedEvent(
-                        comment.getId(),
-                        comment.getPostId(),
-                        comment.getAuthorId()
-                ));
-                return comment;
-            }
-        };
+    // ================================
+    // FACTORY METHODS (Static helpers)
+    // ================================
+
+    /**
+     * Create top-level comment
+     */
+    public static PostComment createTopLevel(PostId postId, UserId authorId, CommentContent content) {
+        return PostComment.builder()
+                .postId(postId)
+                .authorId(authorId)
+                .content(content)
+                .build();
+    }
+
+    /**
+     * Create reply comment
+     */
+    public static PostComment createReply(PostId postId, UserId authorId, CommentContent content,
+                                          CommentId parentCommentId, CommentId rootCommentId) {
+        return PostComment.builder()
+                .postId(postId)
+                .authorId(authorId)
+                .content(content)
+                .parentCommentId(parentCommentId)
+                .rootCommentId(rootCommentId != null ? rootCommentId : parentCommentId)
+                .build();
     }
 
     // ================================
@@ -418,32 +430,5 @@ public class PostComment extends AggregateRoot<CommentId> {
                 id, postId, authorId, commentStatus, createdAt);
     }
 
-    // ================================
-    // FACTORY METHODS (Static helpers)
-    // ================================
 
-    /**
-     * Create top-level comment
-     */
-    public static PostComment createTopLevel(PostId postId, UserId authorId, CommentContent content) {
-        return PostComment.builder()
-                .postId(postId)
-                .authorId(authorId)
-                .content(content)
-                .build();
-    }
-
-    /**
-     * Create reply comment
-     */
-    public static PostComment createReply(PostId postId, UserId authorId, CommentContent content,
-                                          CommentId parentCommentId, CommentId rootCommentId) {
-        return PostComment.builder()
-                .postId(postId)
-                .authorId(authorId)
-                .content(content)
-                .parentCommentId(parentCommentId)
-                .rootCommentId(rootCommentId != null ? rootCommentId : parentCommentId)
-                .build();
-    }
 }

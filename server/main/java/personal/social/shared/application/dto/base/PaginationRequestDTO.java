@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Getter @Setter
 @NoArgsConstructor
@@ -21,11 +23,11 @@ public class PaginationRequestDTO {
     private String sortBy = "createdAt";
     private String sortDirection = "DESC";
 
-    public org.springframework.data.domain.Pageable toPageable() {
-        org.springframework.data.domain.Sort.Direction direction =
+    public Pageable toPageable() {
+        Sort.Direction direction =
                 "ASC".equalsIgnoreCase(sortDirection) ?
-                        org.springframework.data.domain.Sort.Direction.ASC :
-                        org.springframework.data.domain.Sort.Direction.DESC;
+                        Sort.Direction.ASC :
+                        Sort.Direction.DESC;
 
         return org.springframework.data.domain.PageRequest.of(
                 page, size, direction, sortBy

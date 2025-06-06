@@ -1,9 +1,12 @@
 package personal.social.api.controller;
 
-import personal.social.feed.application.service.OptimizedFeedService;
+import personal.social.api.dto.FeedResponse;
+import personal.social.feed.application.dto.in.CreatePostRequest;
+import personal.social.feed.application.dto.PostWebDTO;
+import personal.social.feed.application.service.FeedService;
 import personal.social.feed.application.dto.*;
 import personal.social.shared.application.dto.base.PaginationRequestDTO;
-import personal.social.shared.security.RateLimit;
+import personal.social.shared.infrastructure.security.RateLimit;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +20,9 @@ import java.util.Set;
 @CrossOrigin(origins = "*")
 public class FeedController {
 
-    private final OptimizedFeedService feedService;
+    private final FeedService feedService;
 
-    public FeedController(OptimizedFeedService feedService) {
+    public FeedController(FeedService feedService) {
         this.feedService = feedService;
     }
 
@@ -33,7 +36,7 @@ public class FeedController {
             @RequestParam(defaultValue = "home") String feedType,
             HttpServletRequest request) {
 
-        Long currentUserId = getCurrentUserId(request);
+        String currentUserId = getCurrentUserId(request);
 
         // Determine client type
         ClientType client = determineClientType(userAgent, accept, clientType);
@@ -91,11 +94,11 @@ public class FeedController {
 
     @PostMapping
     @RateLimit(limit = 10, windowSeconds = 300) // 10 posts per 5 minutes
-    public ResponseEntity<CreatePostResponse> createPost(
-            @Valid @RequestBody CreatePostRequestDTO request,
+    public ResponseEntity<?> createPost(
+            @Valid @RequestBody CreatePostRequest request,
             HttpServletRequest httpRequest) {
 
-        Long currentUserId = getCurrentUserId(httpRequest);
+        String currentUserId = getCurrentUserId(httpRequest);
         CreatePostResponse response = feedService.createPost(request, currentUserId);
         return ResponseEntity.ok(response);
     }
@@ -119,10 +122,10 @@ public class FeedController {
         return ClientType.WEB;
     }
 
-    private Long getCurrentUserId(HttpServletRequest request) {
+    private String getCurrentUserId(HttpServletRequest request) {
         // Extract user ID from JWT token
         // This is a placeholder - implement actual JWT extraction
-        return 1L;
+        return "";
     }
 
     private enum ClientType {

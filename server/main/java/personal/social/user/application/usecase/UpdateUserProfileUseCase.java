@@ -9,8 +9,8 @@ import personal.social.user.domain.model.UserProfile;
 import personal.social.user.domain.model.Users;
 import personal.social.user.domain.event.UserEventPublisher;
 import personal.social.user.domain.repository.UserRepository;
-import personal.social.user.application.dto.UpdateUserProfileRequest;
-import personal.social.user.application.dto.UpdateUserProfileResponse;
+import personal.social.user.application.dto.in.UpdateUserProfileRequest;
+import personal.social.user.application.dto.out.EditUserProfileResponse;
 
 import java.time.LocalDateTime;
 
@@ -36,7 +36,7 @@ public class UpdateUserProfileUseCase {
      * @param request a DTO containing the user ID and updated profile data
      * @return a DTO containing the updated user ID, full name, and the time the profile was updated
      */
-    public UpdateUserProfileResponse execute(UpdateUserProfileRequest request) {
+    public EditUserProfileResponse execute(UpdateUserProfileRequest request) {
         // 1. Find user
         UserId userId = UserId.of(request.userId());
         Users user = userRepository.findById(userId)
@@ -58,7 +58,7 @@ public class UpdateUserProfileUseCase {
         // 4. Publish event
         eventPublisher.publishUserProfileUpdated(updatedUser);
 
-        return new UpdateUserProfileResponse(
+        return new EditUserProfileResponse(
                 updatedUser.getId().value(),
                 updatedUser.getProfile().getFullName(),
                 LocalDateTime.now()

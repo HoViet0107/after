@@ -3,6 +3,7 @@ package personal.social.feed.application.mapper;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import personal.social.comment.domain.model.PostComment;
+import personal.social.feed.application.dto.PostWebDTO;
 import personal.social.feed.domain.model.Post;
 import personal.social.feed.application.dto.*;
 import personal.social.feed.application.dto.PostMobileDTO;

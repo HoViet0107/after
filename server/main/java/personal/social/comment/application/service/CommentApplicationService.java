@@ -12,7 +12,6 @@ import personal.social.comment.domain.model.vo.CommentId;
 import personal.social.comment.domain.repository.CommentRepository;
 import personal.social.comment.infrastructure.messaging.CommentEventPublisher;
 import personal.social.feed.domain.model.vo.PostId;
-import personal.social.user.domain.model.UserId;
 import personal.social.user.domain.model.vo.UserId;
 
 import java.util.List;
@@ -110,5 +109,10 @@ public class CommentApplicationService {
 
     public List<CommentDto> getRepliesByCommentId(CommentId of) {
         return null; // Implementation for fetching replies by comment ID
+    }
+
+    public void tagUser(CommentId commentId, UserId userId) {
+        PostComment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
     }
 }

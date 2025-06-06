@@ -1,25 +1,35 @@
 package personal.social.message.infrastructure.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+import personal.social.message.application.dto.MessageEvent;
+
+import java.util.concurrent.CompletableFuture;
 
 @Component
+@Slf4j
+@RequiredArgsConstructor
 public class ChatMessageSubscriber implements MessageListener {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
-    public ChatMessageSubscriber(SimpMessagingTemplate messagingTemplate,
-                                 ObjectMapper objectMapper) {
-        this.messagingTemplate = messagingTemplate;
-        this.objectMapper = objectMapper;
-    }
-
     @Override
     public void onMessage(Message message, byte[] pattern) {
+        // Process message asynchronously to avoid blocking Redis listener
+        CompletableFuture.runAsync(() -> processMessage(message))
+                .exceptionally(throwable -> {
+                    log.error("Error processing chat message: {}", throwable.getMessage(), throwable);
+                    return null;
+                });
+    }
+
+    private void processMessage(Message message) {
         try {
             String channel = new String(message.getChannel());
             String messageBody = new String(message.getBody());
@@ -35,9 +45,10 @@ public class ChatMessageSubscriber implements MessageListener {
                     messageEvent
             );
 
+            log.debug("Processed message for conversation: {}", conversationId);
+
         } catch (Exception e) {
-            // Log error but don't fail
-            System.err.println("Error processing chat message: " + e.getMessage());
+            log.error("Error processing chat message: {}", e.getMessage(), e);
         }
     }
 }

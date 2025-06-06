@@ -11,10 +11,8 @@ import personal.social.user.domain.model.Users;
 import personal.social.user.application.service.PasswordEncoder;
 import personal.social.user.domain.event.UserEventPublisher;
 import personal.social.user.domain.repository.UserRepository;
-import personal.social.user.application.dto.RegisterUserRequest;
-import personal.social.user.application.dto.RegisterUserResponse;
-
-import java.util.UUID;
+import personal.social.user.application.dto.in.RegisterUserRequest;
+import personal.social.user.application.dto.out.RegisterUserResponse;
 
 /**
  * Service responsible for registering new users in the system.
@@ -32,18 +30,6 @@ public class RegisterUserUseCase {
     private final UserEventPublisher eventPublisher;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Executes the user registration use case.
-     * <p>
-     * Registers a new user with the provided email, profile information, and password.
-     * The password is encoded before storage for security.
-     * If the email already exists, throws a UserAlreadyExistsException.
-     * Otherwise, creates a new user, persists it, and publishes a user creation event.
-     * <p>
-     * @param request a DTO containing the user registration data
-     * @return a DTO containing the newly created user's data
-     * @throws UserAlreadyExistsException if the email already exists
-     */
     public RegisterUserResponse execute(RegisterUserRequest request) {
         // 1. Validate business rules
         Email email = Email.of(request.email());
@@ -54,23 +40,27 @@ public class RegisterUserUseCase {
         // 2. Create domain object
         UserProfile profile = new UserProfile(
                 request.firstName(),
-                request.lastName(),
                 request.middleName(),
+                request.lastName(),
                 request.bio(),
                 request.avatarUrl()
         );
 
+        String hashedPassword = passwordEncoder.encode(request.password());
+
         Users user = Users.create(
-                UserId.of(UUID.randomUUID().toString()), // In real app, use proper ID generation
+                UserId.generate(),
                 email,
-                profile
+                profile,
+                hashedPassword
         );
 
         // 3. Save user
         Users savedUser = userRepository.save(user);
 
-        // 4. Publish event
-        eventPublisher.publishUserCreated(savedUser);
+        // 4. Publish events
+        eventPublisher.publishEvents(savedUser.getDomainEvents());
+        savedUser.clearDomainEvents();
 
         return new RegisterUserResponse(
                 savedUser.getId().value(),
