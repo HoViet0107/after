@@ -2,7 +2,7 @@ package personal.social.feed.application.service;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import personal.social.feed.infrastructure.persistence.PostJpaRepository;
+import personal.social.feed.infrastructure.persistence.repository.PostJpaRepository;
 
 import java.time.Duration;
 
@@ -18,7 +18,7 @@ public class FeedCacheService {
         this.postRepository = postRepository;
     }
 
-    public long getFeedCount(Long userId, boolean followingOnly) {
+    public long getFeedCount(String userId, boolean followingOnly) {
         String cacheKey = "feed:count:" + userId + ":" + followingOnly;
 
         Long cachedCount = (Long) redisTemplate.opsForValue().get(cacheKey);
@@ -35,7 +35,7 @@ public class FeedCacheService {
         return count;
     }
 
-    public void invalidateFeedCache(Long userId) {
+    public void invalidateFeedCache(String userId) {
         String pattern = "feed:*:" + userId + ":*";
         redisTemplate.delete(redisTemplate.keys(pattern));
     }

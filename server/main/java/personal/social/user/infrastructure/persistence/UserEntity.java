@@ -29,8 +29,8 @@ public class UserEntity {
      * @GeneratedValue specifies that the ID is auto-generated
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id", nullable = false, length = 36)
+    private String id;
 
     /**
      * User's unique email address

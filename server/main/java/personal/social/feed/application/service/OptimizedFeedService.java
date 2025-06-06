@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Isolation;
 import personal.social.feed.application.dto.PostMobileDTO;
 import personal.social.feed.application.dto.PostWebDTO;
 import personal.social.feed.application.mapper.PostMapper;
-import personal.social.feed.infrastructure.persistence.PostJpaRepository;
+import personal.social.feed.domain.model.Post;
+import personal.social.feed.infrastructure.persistence.PostEntity;
+import personal.social.feed.infrastructure.persistence.repository.PostJpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,7 +38,7 @@ public class OptimizedFeedService {
     }
 
     @Cacheable(value = "user-feeds", key = "#userId + '_mobile_' + #pageable.pageNumber")
-    public Page<PostMobileDTO> getMobileFeed(Long userId, Pageable pageable) {
+    public Page<PostMobileDTO> getMobileFeed(String userId, Pageable pageable) {
         // Get followed users for personalization
         Set<Long> followedUserIds = followRepository.findFollowedUserIds(userId);
 
@@ -61,7 +63,7 @@ public class OptimizedFeedService {
     }
 
     @Cacheable(value = "user-feeds", key = "#userId + '_web_' + #pageable.pageNumber")
-    public Page<PostWebDTO> getWebFeed(Long userId, Pageable pageable) {
+    public Page<PostWebDTO> getWebFeed(String userId, Pageable pageable) {
         Set<Long> followedUserIds = followRepository.findFollowedUserIds(userId);
 
         List<Object[]> results = postRepository.findOptimizedFeed(
@@ -118,7 +120,7 @@ public class OptimizedFeedService {
     // Helper method to map raw query results to DTO
     private PostMobileDTO mapToMobileDTO(Object[] row) {
         PostMobileDTO dto = new PostMobileDTO();
-        dto.setId(((Number) row[0]).longValue());
+        dto.setId((String) row[0]);
         dto.setContent((String) row[1]);
         dto.setCreatedAt(((java.sql.Timestamp) row[2]).toLocalDateTime());
         dto.setAuthorUsername((String) row[5]);

@@ -4,11 +4,11 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import personal.social.user.domain.exception.UserNotFoundException;
-import personal.social.user.domain.model.UserId;
+import personal.social.user.domain.model.vo.UserId;
 import personal.social.user.domain.model.UserProfile;
 import personal.social.user.domain.model.Users;
-import personal.social.user.domain.port.UserEventPublisher;
-import personal.social.user.domain.port.UserRepository;
+import personal.social.user.domain.event.UserEventPublisher;
+import personal.social.user.domain.repository.UserRepository;
 import personal.social.user.application.dto.UpdateUserProfileRequest;
 import personal.social.user.application.dto.UpdateUserProfileResponse;
 

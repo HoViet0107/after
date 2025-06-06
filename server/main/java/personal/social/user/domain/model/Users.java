@@ -3,6 +3,8 @@ package personal.social.user.domain.model;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import personal.social.user.domain.model.vo.Email;
+import personal.social.user.domain.model.vo.UserId;
 
 import java.time.LocalDateTime;
 import java.util.Objects;

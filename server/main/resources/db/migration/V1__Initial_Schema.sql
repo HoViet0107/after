@@ -1,3 +1,8 @@
+-- MySQL Database Schema
+CREATE DATABASE social_media CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE social_media;
+
 -- Users table
 CREATE TABLE users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -76,52 +81,74 @@ CREATE TABLE post_hashtags (
 
 -- Comments table
 CREATE TABLE comments (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(36) PRIMARY KEY,
     content TEXT NOT NULL,
-    post_id BIGINT NOT NULL,
-    author_id BIGINT NOT NULL,
-    parent_comment_id BIGINT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    status ENUM('ACTIVE', 'INACTIVE', 'DELETED') DEFAULT 'ACTIVE',
+    post_id VARCHAR(36) NOT NULL,
+    author_id VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    edited_at TIMESTAMP NULL,
+    status ENUM('ACTIVE', 'HIDDEN_BY_USER', 'DELETED_BY_OWNER', 'DELETED_BY_ADMIN', 'DELETED_BY_USER') NOT NULL DEFAULT 'ACTIVE',
+    parent_comment_id VARCHAR(36) NULL,
+    root_comment_id VARCHAR(36) NULL,
+
+    INDEX idx_comment_post_id (post_id),
+    INDEX idx_comment_author_id (author_id),
+    INDEX idx_comment_parent_id (parent_comment_id),
+    INDEX idx_comment_root_id (root_comment_id),
+    INDEX idx_comment_created_at (created_at),
 
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE,
-
-    INDEX idx_comments_post_created (post_id, created_at DESC),
-    INDEX idx_comments_author (author_id),
-    INDEX idx_comments_parent (parent_comment_id)
-);
-
--- Likes table
-CREATE TABLE post_likes (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    post_id BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-
-    UNIQUE KEY unique_post_like (post_id, user_id),
-    INDEX idx_likes_post (post_id),
-    INDEX idx_likes_user (user_id)
+    FOREIGN KEY (root_comment_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
 -- Comment likes table
 CREATE TABLE comment_likes (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    comment_id BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id VARCHAR(36) PRIMARY KEY,
+    comment_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_comment_like (comment_id, user_id),
+    INDEX idx_comment_like_comment_id (comment_id),
+    INDEX idx_comment_like_user_id (user_id),
 
     FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
-    UNIQUE KEY unique_comment_like (comment_id, user_id),
-    INDEX idx_comment_likes_comment (comment_id),
-    INDEX idx_comment_likes_user (user_id)
+-- Comment media table
+CREATE TABLE comment_media (
+    id VARCHAR(36) PRIMARY KEY,
+    comment_id VARCHAR(36) NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    type ENUM('IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT') NOT NULL,
+    thumbnail_url VARCHAR(500),
+    alt_text VARCHAR(200),
+    width INT,
+    height INT,
+    file_size BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_comment_media_comment_id (comment_id),
+
+    FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
+);
+
+-- Comment tags table
+CREATE TABLE comment_tags (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    comment_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_comment_tag (comment_id, user_id),
+    INDEX idx_comment_tag_comment_id (comment_id),
+    INDEX idx_comment_tag_user_id (user_id),
+
+    FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Follows table

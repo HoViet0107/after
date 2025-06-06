@@ -2,11 +2,11 @@ package personal.social.user.infrastructure.persistence;
 
 import org.springframework.stereotype.Repository;
 
-import personal.social.user.domain.model.Email;
-import personal.social.user.domain.model.UserId;
+import personal.social.user.domain.model.vo.Email;
+import personal.social.user.domain.model.vo.UserId;
 import personal.social.user.domain.model.UserProfile;
 import personal.social.user.domain.model.Users;
-import personal.social.user.domain.port.UserRepository;
+import personal.social.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Optional;

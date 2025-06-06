@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
  * Contains the newly created user's ID, email, full name, and the creation timestamp.
  */
 public record RegisterUserResponse(
-        Long userId,
+        String userId,
         String email,
         String fullName,
         LocalDateTime createdAt

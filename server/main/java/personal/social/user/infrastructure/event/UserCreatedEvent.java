@@ -11,4 +11,4 @@ package personal.social.user.infrastructure.event;
  * @param email    The email address of the created user
  * @param fullName The full name of the created user
  */
-public record UserCreatedEvent(Long userId, String email, String fullName) {}
+public record UserCreatedEvent(String userId, String email, String fullName) {}

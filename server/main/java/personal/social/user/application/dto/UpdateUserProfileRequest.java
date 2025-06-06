@@ -6,7 +6,7 @@ package personal.social.user.application.dto;
  * personal details and profile media.
  */
 public record UpdateUserProfileRequest(
-        Long userId,
+        String userId,
         String firstName,
         String middleName,
         String lastName,

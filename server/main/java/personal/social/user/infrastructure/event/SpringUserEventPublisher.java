@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import personal.social.user.domain.model.Users;
-import personal.social.user.domain.port.UserEventPublisher;
+import personal.social.user.domain.event.UserEventPublisher;
 
 /**
  * Implementation of UserEventPublisher that uses Spring's ApplicationEventPublisher

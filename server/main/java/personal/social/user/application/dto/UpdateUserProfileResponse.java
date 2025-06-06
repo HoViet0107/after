@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
  * Contains the updated user information including ID, full name, and timestamp.
  */
 public record UpdateUserProfileResponse(
-        Long userId,
+        String userId,
         String fullName,
         LocalDateTime updatedAt
 ) {}

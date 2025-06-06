@@ -2,7 +2,7 @@ package personal.social.api.controller;
 
 import personal.social.feed.application.service.OptimizedFeedService;
 import personal.social.feed.application.dto.*;
-import personal.social.shared.dto.base.PaginationRequestDTO;
+import personal.social.shared.application.dto.base.PaginationRequestDTO;
 import personal.social.shared.security.RateLimit;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;

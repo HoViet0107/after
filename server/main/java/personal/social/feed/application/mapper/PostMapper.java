@@ -2,6 +2,7 @@ package personal.social.feed.application.mapper;
 
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
+import personal.social.comment.domain.model.PostComment;
 import personal.social.feed.domain.model.Post;
 import personal.social.feed.application.dto.*;
 import personal.social.feed.application.dto.PostMobileDTO;
@@ -88,13 +89,13 @@ public interface PostMapper {
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    default CommentPreviewDTO toCommentPreview(Comment comment) {
+    default CommentPreviewDTO toCommentPreview(PostComment comment) {
         CommentPreviewDTO dto = new CommentPreviewDTO();
-        dto.setId(comment.getId().getValue());
-        dto.setContent(comment.getContent().getText());
+        dto.setId(comment.getId().value());
+        dto.setContent(String.valueOf(comment.getContent()));
         dto.setAuthorUsername(comment.getAuthor().getUsername());
         dto.setCreatedAt(comment.getCreatedAt());
-        dto.setLikeCount(comment.getEngagement().getLikeCount());
+        dto.setLikeCount(comment.getEngagement().likeCount());
         return dto;
     }
 

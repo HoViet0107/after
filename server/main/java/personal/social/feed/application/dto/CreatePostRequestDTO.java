@@ -1,9 +1,8 @@
 package personal.social.feed.application.dto;
 
 import lombok.*;
-import personal.social.shared.dto.base.BaseResponseDTO;
 import jakarta.validation.constraints.*;
-import java.time.LocalDateTime;
+
 import java.util.List;
 
 @Getter @Setter @Builder

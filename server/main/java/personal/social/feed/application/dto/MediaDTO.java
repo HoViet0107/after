@@ -6,7 +6,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MediaDTO {
-    private Long id;
+    private String id;
     private String url;
     private String thumbnailUrl;
     private String type; // IMAGE, VIDEO, GIF

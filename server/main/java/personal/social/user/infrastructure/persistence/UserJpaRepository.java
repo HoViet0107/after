@@ -15,7 +15,7 @@ import java.util.Optional;
  * This repository extends JpaRepository, which provides basic CRUD operations
  * and pagination support for the UserEntity class.
  */
-public interface UserJpaRepository extends JpaRepository<UserEntity, Long> {
+public interface UserJpaRepository extends JpaRepository<UserEntity, String> {
     
     /**
      * Finds a user by their email address.

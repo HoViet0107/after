@@ -1,7 +1,8 @@
 package personal.social.api.controller;
 
-import personal.social.messaging.application.service.RealTimeChatService;
-import personal.social.messaging.application.dto.*;
+import personal.social.message.application.dto.in.SendMessageRequest;
+import personal.social.message.application.dto.out.SendMessageResponse;
+import personal.social.message.application.service.RealTimeChatService;
 import personal.social.shared.security.RateLimit;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

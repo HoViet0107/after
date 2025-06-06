@@ -7,4 +7,4 @@ package personal.social.user.infrastructure.event;
  * @param userId The unique identifier of the user whose profile was updated
  * @param fullName The updated full name of the user
  */
-public record UserProfileUpdatedEvent(Long userId, String fullName) {}
+public record UserProfileUpdatedEvent(String userId, String fullName) {}

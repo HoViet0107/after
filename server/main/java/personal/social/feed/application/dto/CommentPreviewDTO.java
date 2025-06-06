@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentPreviewDTO {
-    private Long id;
+    private String id;
     private String content;
     private String authorUsername;
     private LocalDateTime createdAt;

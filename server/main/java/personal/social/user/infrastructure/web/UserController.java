@@ -63,7 +63,7 @@ public class UserController {
      */
     @PutMapping("/{userId}/profile")
     public ResponseEntity<UpdateUserProfileResponse> updateProfile(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @Valid @RequestBody UpdateUserProfileRequest request) {
         try {
             UpdateUserProfileResponse response = updateUserProfileUseCase.execute(request);

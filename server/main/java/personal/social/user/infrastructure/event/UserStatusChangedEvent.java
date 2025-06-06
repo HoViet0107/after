@@ -7,4 +7,4 @@ package personal.social.user.infrastructure.event;
  * @param userId The unique identifier of the user whose status has changed
  * @param isOnline The new status of the user: true if the user is now online, false if offline
  */
-public record UserStatusChangedEvent (Long userId, boolean isOnline) {}
+public record UserStatusChangedEvent (String userId, boolean isOnline) {}

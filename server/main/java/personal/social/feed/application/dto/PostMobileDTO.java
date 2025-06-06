@@ -1,7 +1,7 @@
 package personal.social.feed.application.dto;
 
 import lombok.*;
-import personal.social.shared.dto.base.BaseResponseDTO;
+import personal.social.shared.application.dto.base.BaseResponseDTO;
 
 import java.time.LocalDateTime;
 
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostMobileDTO extends BaseResponseDTO {
-    private Long id;
+    private String id;
     private String content;
     private String authorUsername;
     private String authorAvatarUrl;

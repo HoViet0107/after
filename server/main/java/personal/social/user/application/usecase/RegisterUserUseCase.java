@@ -4,15 +4,17 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import personal.social.user.domain.exception.UserAlreadyExistsException;
-import personal.social.user.domain.model.Email;
-import personal.social.user.domain.model.UserId;
+import personal.social.user.domain.model.vo.Email;
+import personal.social.user.domain.model.vo.UserId;
 import personal.social.user.domain.model.UserProfile;
 import personal.social.user.domain.model.Users;
-import personal.social.user.domain.port.PasswordEncoder;
-import personal.social.user.domain.port.UserEventPublisher;
-import personal.social.user.domain.port.UserRepository;
+import personal.social.user.application.service.PasswordEncoder;
+import personal.social.user.domain.event.UserEventPublisher;
+import personal.social.user.domain.repository.UserRepository;
 import personal.social.user.application.dto.RegisterUserRequest;
 import personal.social.user.application.dto.RegisterUserResponse;
+
+import java.util.UUID;
 
 /**
  * Service responsible for registering new users in the system.
@@ -59,7 +61,7 @@ public class RegisterUserUseCase {
         );
 
         Users user = Users.create(
-                UserId.of(System.currentTimeMillis()), // In real app, use proper ID generation
+                UserId.of(UUID.randomUUID().toString()), // In real app, use proper ID generation
                 email,
                 profile
         );
