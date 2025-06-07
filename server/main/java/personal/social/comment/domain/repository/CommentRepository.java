@@ -2,7 +2,7 @@ package personal.social.comment.domain.repository;
 
 import personal.social.comment.domain.model.PostComment;
 import personal.social.comment.domain.model.vo.CommentId;
-import personal.social.feed.domain.model.vo.PostId;
+import personal.social.post.domain.model.vo.PostId;
 import personal.social.user.domain.model.vo.UserId;
 
 import java.util.List;

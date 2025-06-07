@@ -36,8 +36,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // Use simple message broker instead of STOMP relay for easier setup
-        registry.enableSimpleBroker("/topic", "/queue", "/user")
-                .setHeartbeatValue(new long[]{10000, 10000});
+        registry.enableSimpleBroker("/topic", "/queue", "/user");
 
         // Alternative: If you want to use Redis as message broker
         /*

@@ -19,12 +19,12 @@ public class TypingIndicatorSubscriber implements MessageListener {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
-    private final Executor asyncExecutor;
+    private final Executor redisSubscriptionExecutor;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
         // Process asynchronously to avoid blocking Redis
-        CompletableFuture.runAsync(() -> processTypingIndicator(message), asyncExecutor)
+        CompletableFuture.runAsync(() -> processTypingIndicator(message), redisSubscriptionExecutor)
                 .exceptionally(throwable -> {
                     log.error("Error processing typing indicator: {}", throwable.getMessage(), throwable);
                     return null;

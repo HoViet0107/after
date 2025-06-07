@@ -33,7 +33,7 @@ public class MessageRepositoryImpl implements MessageRepository {
 
     @Override
     public List<ChatMessage> findByConversation(ConversationId conversationId) {
-        return jpaRepository.findByConversationIdOrderByTimestampDesc(conversationId.value())
+        return jpaRepository.findByConversationIdOrderBySentAtDesc(conversationId.value())
                 .stream()
                 .map(this::toDomain)
                 .toList();

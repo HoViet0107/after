@@ -1,11 +1,11 @@
 package personal.social.api.controller;
 
 import personal.social.api.dto.FeedResponse;
-import personal.social.feed.application.dto.in.CreatePostRequest;
-import personal.social.feed.application.dto.PostWebDTO;
-import personal.social.feed.application.dto.out.CreatePostResponse;
-import personal.social.feed.application.service.FeedService;
-import personal.social.feed.application.dto.*;
+import personal.social.post.application.dto.in.CreatePostRequest;
+import personal.social.post.application.dto.PostWebDTO;
+import personal.social.post.application.dto.out.CreatePostResponse;
+import personal.social.post.application.service.FeedService;
+import personal.social.post.application.dto.*;
 import personal.social.shared.application.dto.base.PaginationRequestDTO;
 import personal.social.shared.infrastructure.security.RateLimit;
 import org.springframework.data.domain.Page;

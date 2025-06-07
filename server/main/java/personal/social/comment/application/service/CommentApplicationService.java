@@ -11,7 +11,7 @@ import personal.social.comment.domain.model.vo.CommentContent;
 import personal.social.comment.domain.model.vo.CommentId;
 import personal.social.comment.domain.repository.CommentRepository;
 import personal.social.comment.infrastructure.messaging.CommentEventPublisher;
-import personal.social.feed.domain.model.vo.PostId;
+import personal.social.post.domain.model.vo.PostId;
 import personal.social.user.domain.model.vo.UserId;
 
 import java.util.List;

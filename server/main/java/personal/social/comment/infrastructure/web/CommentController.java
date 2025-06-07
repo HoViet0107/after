@@ -2,16 +2,13 @@ package personal.social.comment.infrastructure.web;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import personal.social.comment.application.dto.*;
 import personal.social.comment.application.service.CommentApplicationService;
 import personal.social.comment.domain.model.vo.CommentId;
-import personal.social.feed.domain.model.vo.PostId;
+import personal.social.post.domain.model.vo.PostId;
 import personal.social.user.domain.model.vo.UserId;
 
 import java.util.List;

@@ -9,14 +9,20 @@ import java.util.List;
 
 public interface JpaCommentEntityRepository extends JpaRepository<PostCommentEntity, String> {
 
-    List<PostCommentEntity> findByPostIdAndStatusOrderByCreatedAtDesc(String postId, String status);
+    @Query("SELECT c FROM PostCommentEntity c WHERE c.post.id = :postId AND c.commentStatus = :status ORDER BY c.createdAt DESC")
+    List<PostCommentEntity> findByPostIdAndCommentStatusOrderByCreatedAtDesc(
+            @Param("postId") String postId,
+            @Param("status") String status);
 
-    List<PostCommentEntity> findByParentCommentIdAndStatusOrderByCreatedAtAsc(String parentId, String status);
+    @Query("SELECT c FROM PostCommentEntity c WHERE c.post.id = :postId AND c.commentStatus = :status ORDER BY c.createdAt ASC")
+    List<PostCommentEntity> findByParentCommentIdAndCommentStatusOrderByCreatedAtAsc(String parentId, String status);
 
-    List<PostCommentEntity> findByAuthorIdAndStatusOrderByCreatedAtDesc(String authorId, String status);
+    @Query("SELECT c FROM PostCommentEntity c WHERE c.author.id = :authorId AND c.commentStatus = :status ORDER BY c.createdAt DESC")
+    List<PostCommentEntity> findByAuthorIdAndCommentStatusOrderByCreatedAtDesc(String authorId, String status);
 
-    long countByParentCommentIdAndStatus(String parentId, String status);
+    @Query("SELECT COUNT(c.id) FROM PostCommentEntity c WHERE c.parentComment.id = :parentId AND c.commentStatus = :status")
+    long countByParentCommentIdAndCommentStatus(String parentId, String status);
 
-    @Query("SELECT c FROM PostCommentEntity c WHERE c.post.id = :postId AND c.status = :status AND c.parentComment IS NULL ORDER BY c.createdAt DESC")
+    @Query("SELECT c FROM PostCommentEntity c WHERE c.post.id = :postId AND c.commentStatus = :status AND c.parentComment IS NULL ORDER BY c.createdAt DESC")
     List<PostCommentEntity> findTopLevelCommentsByPostId(@Param("postId") String postId, @Param("status") String status);
 }

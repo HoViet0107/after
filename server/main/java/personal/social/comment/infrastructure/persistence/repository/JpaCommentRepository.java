@@ -7,7 +7,7 @@ import personal.social.comment.domain.model.vo.CommentId;
 import personal.social.comment.domain.repository.CommentRepository;
 import personal.social.comment.infrastructure.persistence.PostCommentEntity;
 import personal.social.comment.application.mapper.CommentEntityMapper;
-import personal.social.feed.domain.model.vo.PostId;
+import personal.social.post.domain.model.vo.PostId;
 import personal.social.user.domain.model.vo.UserId;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public class JpaCommentRepository implements CommentRepository {
 
     @Override
     public List<PostComment> findByPostId(PostId postId) {
-        return jpaRepository.findByPostIdAndStatusOrderByCreatedAtDesc(postId.value(), "ACTIVE")
+        return jpaRepository.findByPostIdAndCommentStatusOrderByCreatedAtDesc(postId.value(), "ACTIVE")
                 .stream()
                 .map(mapper::toDomain)
                 .toList();
@@ -43,7 +43,7 @@ public class JpaCommentRepository implements CommentRepository {
 
     @Override
     public List<PostComment> findRepliesByParentId(CommentId parentId) {
-        return jpaRepository.findByParentCommentIdAndStatusOrderByCreatedAtAsc(parentId.value(), "ACTIVE")
+        return jpaRepository.findByParentCommentIdAndCommentStatusOrderByCreatedAtAsc(parentId.value(), "ACTIVE")
                 .stream()
                 .map(mapper::toDomain)
                 .toList();
@@ -51,7 +51,7 @@ public class JpaCommentRepository implements CommentRepository {
 
     @Override
     public List<PostComment> findByAuthorId(UserId authorId) {
-        return jpaRepository.findByAuthorIdAndStatusOrderByCreatedAtDesc(authorId.value(), "ACTIVE")
+        return jpaRepository.findByAuthorIdAndCommentStatusOrderByCreatedAtDesc(authorId.value(), "ACTIVE")
                 .stream()
                 .map(mapper::toDomain)
                 .toList();
@@ -64,7 +64,7 @@ public class JpaCommentRepository implements CommentRepository {
 
     @Override
     public long countRepliesByCommentId(CommentId commentId) {
-        return jpaRepository.countByParentCommentIdAndStatus(commentId.value(), "ACTIVE");
+        return jpaRepository.countByParentCommentIdAndCommentStatus(commentId.value(), "ACTIVE");
     }
 
     @Override

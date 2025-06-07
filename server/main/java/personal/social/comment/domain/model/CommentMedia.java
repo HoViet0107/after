@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import personal.social.feed.domain.model.vo.MediaId;
-import personal.social.feed.domain.model.vo.PostId;
+import personal.social.post.domain.model.vo.MediaId;
+import personal.social.post.domain.model.vo.PostId;
 import personal.social.shared.domain.enums.FeedMediaType;
 
 import java.time.LocalDateTime;

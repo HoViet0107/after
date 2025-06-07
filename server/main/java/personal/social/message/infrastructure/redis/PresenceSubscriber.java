@@ -1,8 +1,8 @@
 package personal.social.message.infrastructure.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -14,16 +14,24 @@ import java.util.concurrent.Executor;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class PresenceSubscriber implements MessageListener {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
-    private final Executor asyncExecutor;
+    private final Executor redisListenerExecutor;
+
+    public PresenceSubscriber(
+            SimpMessagingTemplate messagingTemplate,
+            ObjectMapper objectMapper,
+            @Qualifier("redisListenerExecutor") Executor redisListenerExecutor) {
+        this.messagingTemplate = messagingTemplate;
+        this.objectMapper = objectMapper;
+        this.redisListenerExecutor = redisListenerExecutor;
+    }
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
-        CompletableFuture.runAsync(() -> processPresenceEvent(message), asyncExecutor)
+        CompletableFuture.runAsync(() -> processPresenceEvent(message), redisListenerExecutor)
                 .exceptionally(throwable -> {
                     log.error("Error processing presence event: {}", throwable.getMessage(), throwable);
                     return null;

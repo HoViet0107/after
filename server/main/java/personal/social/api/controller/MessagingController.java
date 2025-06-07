@@ -1,6 +1,6 @@
 package personal.social.api.controller;
 
-import personal.social.feed.application.dto.in.MediaMessageRequest;
+import personal.social.post.application.dto.in.MediaMessageRequest;
 import personal.social.message.application.dto.in.ConversationHistoryRequest;
 import personal.social.message.application.dto.in.SendMessageRequest;
 import personal.social.message.application.dto.out.ConversationHistoryResponse;

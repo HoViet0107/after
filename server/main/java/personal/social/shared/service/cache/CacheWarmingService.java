@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import personal.social.conversation.domain.repository.ConversationRepository;
-import personal.social.feed.domain.repository.PostRepository;
+import personal.social.post.domain.repository.PostRepository;
 import personal.social.user.domain.repository.UserRepository;
 
 import java.util.List;

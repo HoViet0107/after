@@ -2,7 +2,7 @@ package personal.social.comment.infrastructure.persistence;
 
 import jakarta.persistence.*;
 import lombok.*;
-import personal.social.feed.infrastructure.persistence.PostEntity;
+import personal.social.post.infrastructure.persistence.PostEntity;
 import personal.social.shared.domain.enums.FeedStatus;
 import personal.social.user.infrastructure.persistence.UserEntity;
 import java.time.LocalDateTime;
