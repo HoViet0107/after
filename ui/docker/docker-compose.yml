@@ -1,0 +1,295 @@
+version: '3.8'
+
+services:
+  # Frontend - Vue.js Application
+  social-ui:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: social-ui
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://localhost:8080/api/v1
+      - VITE_WS_URL=ws://localhost:8080
+    depends_on:
+      - social-backend
+      - redis
+    networks:
+      - social-network
+    restart: unless-stopped
+    volumes:
+      - nginx_cache:/var/cache/nginx
+
+  # Backend - Spring Boot Application
+  social-backend:
+    image: openjdk:17-jdk-slim
+    container_name: social-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring Profiles
+      - SPRING_PROFILES_ACTIVE=docker
+      
+      # Database Configuration
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/social_media_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=social_user
+      - SPRING_DATASOURCE_PASSWORD=social_password
+      
+      # Redis Configuration
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=redis_password
+      
+      # JWT Configuration
+      - JWT_SECRET=z0UPwGEn0XiT35ZIQwq1vtGjMwdU6Zpd_docker_secret
+      - JWT_EXPIRATION=86400000
+      
+      # File Upload Configuration
+      - FILE_UPLOAD_DIR=/app/uploads
+      - FILE_MAX_FILE_SIZE=10485760
+      
+      # CORS Configuration
+      - CORS_ORIGINS=http://localhost:3000,http://social-ui
+      
+      # WebSocket Configuration
+      - WEBSOCKET_ENABLED=true
+      - WEBSOCKET_CORS_ALLOWED_ORIGINS=http://localhost:3000,http://social-ui
+      
+      # JVM Options
+      - JAVA_OPTS=-Xmx1g -Xms512m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - social-network
+    restart: unless-stopped
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Database - MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: social-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=social_media_db
+      - MYSQL_USER=social_user
+      - MYSQL_PASSWORD=social_password
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_config:/etc/mysql/conf.d
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - social-network
+    restart: unless-stopped
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --innodb-buffer-pool-size=512M
+      - --max-connections=200
+      - --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "social_user", "-psocial_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Cache & Message Queue - Redis
+  redis:
+    image: redis:7-alpine
+    container_name: social-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=redis_password
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - social-network
+    restart: unless-stopped
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --requirepass redis_password
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Reverse Proxy - Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: social-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-default.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_cache:/var/cache/nginx
+      - nginx_logs:/var/log/nginx
+      - ssl_certs:/etc/nginx/ssl:ro
+    depends_on:
+      - social-ui
+      - social-backend
+    networks:
+      - social-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring - Prometheus (Optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: social-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - social-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    profiles:
+      - monitoring
+
+  # Visualization - Grafana (Optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: social-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - social-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Log Management - ELK Stack (Optional)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: social-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - social-network
+    restart: unless-stopped
+    profiles:
+      - logging
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: social-logstash
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - backend_logs:/var/log/app:ro
+      - nginx_logs:/var/log/nginx:ro
+    ports:
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+    networks:
+      - social-network
+    restart: unless-stopped
+    profiles:
+      - logging
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: social-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - social-network
+    restart: unless-stopped
+    profiles:
+      - logging
+
+# Networks
+networks:
+  social-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes
+volumes:
+  # Application Data
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_uploads:
+    driver: local
+  
+  # Configuration
+  mysql_config:
+    driver: local
+  ssl_certs:
+    driver: local
+  
+  # Logs
+  backend_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+  nginx_cache:
+    driver: local
+  
+  # Monitoring (Optional)
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  
+  # Logging (Optional)
+  elasticsearch_data:
+    driver: local
