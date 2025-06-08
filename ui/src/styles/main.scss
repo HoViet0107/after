@@ -1,7 +1,7 @@
 // Main stylesheet tổng hợp tất cả styles với theme support và responsive design
 
 // Import base files
-@import 'variables';
+@import '_variables';
 @import 'mixins';
 
 // Import Bootstrap customization
@@ -18,6 +18,12 @@
 // Import theme styles
 @import 'themes/light';
 @import 'themes/dark';
+
+// Import custom styles
+@import 'base';
+@import 'components';
+@import 'utilities';
+@import 'themes';
 
 // Global resets và base styles
 *,

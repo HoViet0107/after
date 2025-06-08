@@ -4,8 +4,8 @@ import router from '@/router'
 import App from '@/App.vue'
 
 // Bootstrap CSS và JS
-import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap'
+import 'bootstrap/dist/css/bootstrap.min.css'
 
 // Custom styles
 import '@/styles/main.scss'

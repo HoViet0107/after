@@ -5,19 +5,25 @@
 // ==========================================
 
 // Import Bootstrap functions first for calculations
-@import '~bootstrap/scss/functions';
+@import '~/bootstrap/scss/functions';
+// Import Bootstrap variables
+@import '_variables';
 
-// Override Bootstrap variables
+// Custom variables (override Bootstrap variables)
+$primary: #007bff;
+$secondary: #6c757d;
+
+// Override Bootstrap variables with design system values
 $white: #ffffff;
-$gray-100: #f8f9fa;
-$gray-200: #e9ecef;
-$gray-300: #dee2e6;
-$gray-400: #ced4da;
-$gray-500: #adb5bd;
-$gray-600: #6c757d;
-$gray-700: #495057;
-$gray-800: #343a40;
-$gray-900: #212529;
+$gray-100: $gray-100;
+$gray-200: $gray-200;
+$gray-300: $gray-300;
+$gray-400: $gray-400;
+$gray-500: $gray-500;
+$gray-600: $gray-600;
+$gray-700: $gray-700;
+$gray-800: $gray-800;
+$gray-900: $gray-900;
 $black: #000000;
 
 // Update primary colors to match our design system
@@ -32,9 +38,9 @@ $green: $success-600;
 $teal: #20c997;
 $cyan: $info-600;
 
-// Set primary brand colors
+// Theme colors
 $primary: $blue;
-$secondary: $gray-600;
+$secondary: $secondary;  // use from _variables.scss
 $success: $green;
 $info: $cyan;
 $warning: $yellow;
@@ -42,8 +48,13 @@ $danger: $red;
 $light: $gray-100;
 $dark: $gray-900;
 
+// Import Bootstrap variables and mixins after our overrides
+@import '~/bootstrap/scss/variables';
+@import '~/bootstrap/scss/maps';
+@import '~/bootstrap/scss/mixins';
+
 // Theme colors map
-$theme-colors: (
+$theme-colors: map-merge($theme-colors, (
   "primary": $primary,
   "secondary": $secondary,
   "success": $success,
@@ -52,10 +63,10 @@ $theme-colors: (
   "danger": $danger,
   "light": $light,
   "dark": $dark
-);
+));
 
 // Typography
-$font-family-sans-serif: $font-family-sans;
+$font-family-sans-serif: $font-family-base;
 $font-family-monospace: $font-family-mono;
 $font-size-base: $font-size-base;
 $font-weight-normal: $font-weight-normal;
@@ -93,7 +104,7 @@ $spacers: (
 );
 
 // Grid
-$grid-columns: $grid-columns;
+$grid-columns: 12;
 $grid-gutter-width: $grid-gutter-width;
 $grid-row-columns: 6;
 
@@ -442,53 +453,49 @@ $spinner-border-width-sm: 0.125em;
 // IMPORT BOOTSTRAP
 // ==========================================
 
-// Import Bootstrap variables and mixins
-@import '~bootstrap/scss/variables';
-@import '~bootstrap/scss/mixins';
-
 // Import Bootstrap utilities
-@import '~bootstrap/scss/utilities';
+@import '~/bootstrap/scss/utilities';
 
 // Import Layout & components
-@import '~bootstrap/scss/root';
-@import '~bootstrap/scss/reboot';
-@import '~bootstrap/scss/type';
-@import '~bootstrap/scss/images';
-@import '~bootstrap/scss/containers';
-@import '~bootstrap/scss/grid';
+@import '~/bootstrap/scss/root';
+@import '~/bootstrap/scss/reboot';
+@import '~/bootstrap/scss/type';
+@import '~/bootstrap/scss/images';
+@import '~/bootstrap/scss/containers';
+@import '~/bootstrap/scss/grid';
 
 // Import components
-@import '~bootstrap/scss/tables';
-@import '~bootstrap/scss/forms';
-@import '~bootstrap/scss/buttons';
-@import '~bootstrap/scss/transitions';
-@import '~bootstrap/scss/dropdown';
-@import '~bootstrap/scss/button-group';
-@import '~bootstrap/scss/nav';
-@import '~bootstrap/scss/navbar';
-@import '~bootstrap/scss/card';
-@import '~bootstrap/scss/accordion';
-@import '~bootstrap/scss/breadcrumb';
-@import '~bootstrap/scss/pagination';
-@import '~bootstrap/scss/badge';
-@import '~bootstrap/scss/alert';
-@import '~bootstrap/scss/progress';
-@import '~bootstrap/scss/list-group';
-@import '~bootstrap/scss/close';
-@import '~bootstrap/scss/toasts';
-@import '~bootstrap/scss/modal';
-@import '~bootstrap/scss/tooltip';
-@import '~bootstrap/scss/popover';
-@import '~bootstrap/scss/carousel';
-@import '~bootstrap/scss/spinners';
-@import '~bootstrap/scss/offcanvas';
-@import '~bootstrap/scss/placeholders';
+@import '~/bootstrap/scss/tables';
+@import '~/bootstrap/scss/forms';
+@import '~/bootstrap/scss/buttons';
+@import '~/bootstrap/scss/transitions';
+@import '~/bootstrap/scss/dropdown';
+@import '~/bootstrap/scss/button-group';
+@import '~/bootstrap/scss/nav';
+@import '~/bootstrap/scss/navbar';
+@import '~/bootstrap/scss/card';
+@import '~/bootstrap/scss/accordion';
+@import '~/bootstrap/scss/breadcrumb';
+@import '~/bootstrap/scss/pagination';
+@import '~/bootstrap/scss/badge';
+@import '~/bootstrap/scss/alert';
+@import '~/bootstrap/scss/progress';
+@import '~/bootstrap/scss/list-group';
+@import '~/bootstrap/scss/close';
+@import '~/bootstrap/scss/toasts';
+@import '~/bootstrap/scss/modal';
+@import '~/bootstrap/scss/tooltip';
+@import '~/bootstrap/scss/popover';
+@import '~/bootstrap/scss/carousel';
+@import '~/bootstrap/scss/spinners';
+@import '~/bootstrap/scss/offcanvas';
+@import '~/bootstrap/scss/placeholders';
 
 // Helpers
-@import '~bootstrap/scss/helpers';
+@import '~/bootstrap/scss/helpers';
 
 // Utilities
-@import '~bootstrap/scss/utilities/api';
+@import '~/bootstrap/scss/utilities/api';
 
 // ==========================================
 // CUSTOM BOOTSTRAP COMPONENT ENHANCEMENTS
