@@ -3,6 +3,13 @@
 import { REGEX_PATTERNS, DATE_CONFIG, UI_CONFIG } from './constants'
 
 // Debounce function for performance optimization
+/**
+ * Debounce function for performance optimization(trì hoãn)
+ * @param {Function} func - The function to debounce
+ * @param {number} wait - The number of milliseconds to delay
+ * @param {boolean} [immediate=false] - If `true`, `func` is invoked on the leading edge of the timeout
+ * @return {Function} Returns the new debounced function
+ */
 export function debounce(func, wait, immediate = false) {
     let timeout
 
@@ -433,10 +440,6 @@ export function isPhone(phone) {
     return REGEX_PATTERNS.PHONE.test(phone)
 }
 
-export function isUsername(username) {
-    return REGEX_PATTERNS.USERNAME.test(username)
-}
-
 export function isStrongPassword(password) {
     return REGEX_PATTERNS.PASSWORD.test(password)
 }
@@ -483,6 +486,13 @@ export function stripHtml(html) {
 }
 
 // Storage utilities
+/**
+ * Retrieves and parses a JSON item from storage
+ * @param {string} key - The key to retrieve from storage
+ * @param {*} [defaultValue=null] - Value to return if key doesn't exist or parsing fails
+ * @param {Storage} [storage=localStorage] - Storage object to use (defaults to localStorage)
+ * @returns {*} The parsed item or defaultValue if not found or on error
+ */
 export function getStorageItem(key, defaultValue = null, storage = localStorage) {
     try {
         const item = storage.getItem(key)

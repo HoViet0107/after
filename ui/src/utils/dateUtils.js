@@ -27,31 +27,31 @@ export function formatDate(date, format = DATE_CONFIG.FORMATS.DATE, locale = DEF
 
     try {
         switch (format) {
-            case 'relative':
+            case DATE_CONFIG.FORMATS.RELATIVE:
                 return formatRelativeTime(dateObj, locale)
 
-            case 'ago':
+            case DATE_CONFIG.FORMATS.AGO:
                 return formatTimeAgo(dateObj, locale)
 
-            case 'smart':
+            case DATE_CONFIG.FORMATS.SMART:
                 return formatSmartTime(dateObj, locale)
 
-            case 'full':
+            case DATE_CONFIG.FORMATS.FULL:
                 return formatFullDate(dateObj, locale, timezone)
 
-            case 'short':
+            case DATE_CONFIG.FORMATS.SHORT:
                 return formatShortDate(dateObj, locale)
 
-            case 'time':
+            case DATE_CONFIG.FORMATS.TIME:
                 return formatTime(dateObj, locale)
 
-            case 'datetime':
+            case DATE_CONFIG.FORMATS.DATETIME:
                 return formatDateTime(dateObj, locale, timezone)
 
-            case 'iso':
+            case DATE_CONFIG.FORMATS.ISO:
                 return dateObj.toISOString()
 
-            case 'timestamp':
+            case DATE_CONFIG.FORMATS.TIMESTAMP:
                 return dateObj.getTime().toString()
 
             default:

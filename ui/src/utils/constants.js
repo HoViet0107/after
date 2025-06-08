@@ -522,7 +522,6 @@ export const ENV_CONFIG = {
 export const REGEX_PATTERNS = {
     EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     PHONE: /^(\+84|0)[0-9]{9,10}$/,
-    USERNAME: /^[a-zA-Z0-9_]{3,30}$/,
     PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
     URL: /^https?:\/\/.+/,
     HASHTAG: /#[a-zA-Z0-9_\u00C0-\u017F\u1EA0-\u1EF9]+/g,
@@ -539,7 +538,12 @@ export const DATE_CONFIG = {
         TIME: 'HH:mm',
         DATETIME: 'DD/MM/YYYY HH:mm',
         FULL: 'dddd, DD MMMM YYYY [lúc] HH:mm',
-        RELATIVE: 'relative'
+        RELATIVE: 'relative',
+        AGO: 'ago',
+        SMART: 'smart',
+        SHORT: 'short',
+        ISO: 'iso',
+        TIMESTAMP: 'timestamp'
     },
 
     // Locales

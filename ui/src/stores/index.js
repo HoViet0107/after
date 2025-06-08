@@ -1,4 +1,3 @@
-// src/stores/index.js
 // Pinia store configuration với plugins, devtools và tối ưu performance
 
 import { createPinia } from 'pinia'

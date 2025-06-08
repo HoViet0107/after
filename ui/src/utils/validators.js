@@ -1,8 +1,15 @@
-// Form validation rules với real-time validation và error messages
+// Form validation rules with real-time validation and error messages
 
 import { REGEX_PATTERNS, USER_CONFIG, POST_CONFIG, MESSAGE_CONFIG } from './constants'
 
 // Validation result structure
+/**
+ * Represents the result of a validation operation.
+ * 
+ * @param {boolean} isValid - Indicates if the validation was successful.
+ * @param {string} [message=''] - An optional message providing additional context about the validation result.
+ * @param {string} [field=''] - An optional field name associated with the validation result.
+ */
 class ValidationResult {
     constructor(isValid = true, message = '', field = '') {
         this.isValid = isValid
@@ -19,7 +26,13 @@ class ValidationResult {
     }
 }
 
-// Base validation functions
+/**
+ * Validates that a value is not null, undefined, or empty.
+ * 
+ * @param {*} value - The value to validate.
+ * @param {string} [fieldName='Trường này'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const required = (value, fieldName = 'Trường này') => {
     if (value === null || value === undefined || value === '') {
         return ValidationResult.error(`${fieldName} là bắt buộc`)
@@ -33,6 +46,12 @@ export const required = (value, fieldName = 'Trường này') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that a value has a minimum length.
+ * 
+ * @param {number} min - The minimum length required.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const minLength = (min) => (value, fieldName = 'Trường này') => {
     if (!value) return ValidationResult.success() // Let required handle empty values
 
@@ -43,6 +62,12 @@ export const minLength = (min) => (value, fieldName = 'Trường này') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that a value has a maximum length.
+ * 
+ * @param {number} max - The maximum length allowed.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const maxLength = (max) => (value, fieldName = 'Trường này') => {
     if (!value) return ValidationResult.success()
 
@@ -53,6 +78,12 @@ export const maxLength = (max) => (value, fieldName = 'Trường này') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that a value is greater than or equal to a minimum value.
+ * 
+ * @param {number} min - The minimum value allowed.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const minValue = (min) => (value, fieldName = 'Giá trị') => {
     if (!value && value !== 0) return ValidationResult.success()
 
@@ -66,6 +97,12 @@ export const minValue = (min) => (value, fieldName = 'Giá trị') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that a value is less than or equal to a maximum value.
+ * 
+ * @param {number} max - The maximum value allowed.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const maxValue = (max) => (value, fieldName = 'Giá trị') => {
     if (!value && value !== 0) return ValidationResult.success()
 
@@ -79,6 +116,13 @@ export const maxValue = (max) => (value, fieldName = 'Giá trị') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that a value matches a regular expression.
+ * 
+ * @param {RegExp} regex - The regular expression to validate against.
+ * @param {string} [message=''] - An optional custom error message.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const pattern = (regex, message) => (value, fieldName = 'Trường này') => {
     if (!value) return ValidationResult.success()
 
@@ -88,6 +132,13 @@ export const pattern = (regex, message) => (value, fieldName = 'Trường này')
     return ValidationResult.success()
 }
 
+/**
+ * Validates that a value is one of a set of allowed values.
+ * 
+ * @param {Array} allowedValues - An array of allowed values.
+ * @param {string} [message=''] - An optional custom error message.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const oneOf = (allowedValues, message) => (value, fieldName = 'Trường này') => {
     if (!value) return ValidationResult.success()
 
@@ -99,6 +150,13 @@ export const oneOf = (allowedValues, message) => (value, fieldName = 'Trường 
     return ValidationResult.success()
 }
 
+/**
+ * Validates a value using a custom validator function.
+ * 
+ * @param {Function} validatorFn - The validator function to use.
+ * @param {string} [message=''] - An optional custom error message.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const custom = (validatorFn, message) => (value, fieldName = 'Trường này') => {
     try {
         const isValid = validatorFn(value)
@@ -111,7 +169,13 @@ export const custom = (validatorFn, message) => (value, fieldName = 'Trường n
     }
 }
 
-// Specific field validators
+/**
+ * Validates an email address.
+ * 
+ * @param {string} value - The value to validate.
+ * @param {string} [fieldName='Email'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const email = (value, fieldName = 'Email') => {
     if (!value) return ValidationResult.success()
 
@@ -121,6 +185,13 @@ export const email = (value, fieldName = 'Email') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates a phone number.
+ * 
+ * @param {string} value - The value to validate.
+ * @param {string} [fieldName='Số điện thoại'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const phone = (value, fieldName = 'Số điện thoại') => {
     if (!value) return ValidationResult.success()
 
@@ -130,32 +201,19 @@ export const phone = (value, fieldName = 'Số điện thoại') => {
     return ValidationResult.success()
 }
 
-export const username = (value, fieldName = 'Tên đăng nhập') => {
-    if (!value) return ValidationResult.success()
-
-    const trimmed = value.trim()
-
-    if (!REGEX_PATTERNS.USERNAME.test(trimmed)) {
-        return ValidationResult.error('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới')
-    }
-
-    if (trimmed.length < USER_CONFIG.USERNAME_MIN_LENGTH) {
-        return ValidationResult.error(`Tên đăng nhập phải có ít nhất ${USER_CONFIG.USERNAME_MIN_LENGTH} ký tự`)
-    }
-
-    if (trimmed.length > USER_CONFIG.USERNAME_MAX_LENGTH) {
-        return ValidationResult.error(`Tên đăng nhập không được vượt quá ${USER_CONFIG.USERNAME_MAX_LENGTH} ký tự`)
-    }
-
-    // Check for reserved usernames
-    const reservedUsernames = ['admin', 'root', 'api', 'www', 'mail', 'ftp', 'support', 'help']
-    if (reservedUsernames.includes(trimmed.toLowerCase())) {
-        return ValidationResult.error('Tên đăng nhập này không được sử dụng')
-    }
-
-    return ValidationResult.success()
-}
-
+/**
+ * Validates a password based on predefined criteria.
+ * 
+ * @param {string} value - The password value to validate.
+ * @param {string} [fieldName='Mật khẩu'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ * 
+ * Validates that the password:
+ * - Is not empty
+ * - Has a minimum length defined by USER_CONFIG.PASSWORD_MIN_LENGTH
+ * - Does not exceed a maximum length defined by USER_CONFIG.PASSWORD_MAX_LENGTH
+ * - Contains at least one uppercase letter, one lowercase letter, and one digit
+ */
 export const password = (value, fieldName = 'Mật khẩu') => {
     if (!value) return ValidationResult.success()
 
@@ -174,6 +232,13 @@ export const password = (value, fieldName = 'Mật khẩu') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that the confirm password value matches the original password value.
+ * 
+ * @param {string} confirmValue - The confirmation value to validate.
+ * @param {string} originalValue - The original password value to compare against.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const confirmPassword = (confirmValue, originalValue) => {
     if (!confirmValue) return ValidationResult.success()
 
@@ -183,6 +248,13 @@ export const confirmPassword = (confirmValue, originalValue) => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates a URL.
+ * 
+ * @param {string} value - The URL to validate.
+ * @param {string} [fieldName='URL'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const url = (value, fieldName = 'URL') => {
     if (!value) return ValidationResult.success()
 
@@ -192,6 +264,13 @@ export const url = (value, fieldName = 'URL') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates a date.
+ * 
+ * @param {string} value - The date to validate.
+ * @param {string} [fieldName='Ngày'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const date = (value, fieldName = 'Ngày') => {
     if (!value) return ValidationResult.success()
 
@@ -202,6 +281,13 @@ export const date = (value, fieldName = 'Ngày') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates a date range.
+ * 
+ * @param {string} startDate - The start date of the range.
+ * @param {string} endDate - The end date of the range.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const dateRange = (startDate, endDate) => {
     if (!startDate || !endDate) return ValidationResult.success()
 
@@ -219,6 +305,12 @@ export const dateRange = (startDate, endDate) => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that the user's age is at least the specified minimum age.
+ * 
+ * @param {number} minAgeYears - The minimum age in years.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const minAge = (minAgeYears) => (value, fieldName = 'Ngày sinh') => {
     if (!value) return ValidationResult.success()
 
@@ -253,6 +345,12 @@ export const fileSize = (maxSizeBytes) => (file, fieldName = 'File') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that the file type is one of the allowed types.
+ * 
+ * @param {Array} allowedTypes - An array of allowed file types.
+ * @returns {Function} A validator function that takes a file and an optional field name.
+ */
 export const fileType = (allowedTypes) => (file, fieldName = 'File') => {
     if (!file) return ValidationResult.success()
 
@@ -262,6 +360,13 @@ export const fileType = (allowedTypes) => (file, fieldName = 'File') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that the file is an image.
+ * 
+ * @param {File} file - The file to validate.
+ * @param {string} [fieldName='Hình ảnh'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const imageFile = (file, fieldName = 'Hình ảnh') => {
     if (!file) return ValidationResult.success()
 
@@ -272,6 +377,13 @@ export const imageFile = (file, fieldName = 'Hình ảnh') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that the file is a video.
+ * 
+ * @param {File} file - The file to validate.
+ * @param {string} [fieldName='Video'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const videoFile = (file, fieldName = 'Video') => {
     if (!file) return ValidationResult.success()
 
@@ -306,6 +418,13 @@ export const postContent = (value, fieldName = 'Nội dung bài viết') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates the content of a comment.
+ * 
+ * @param {string} value - The comment content to validate.
+ * @param {string} [fieldName='Bình luận'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const commentContent = (value, fieldName = 'Bình luận') => {
     if (!value) return ValidationResult.success()
 
@@ -318,6 +437,13 @@ export const commentContent = (value, fieldName = 'Bình luận') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates the content of a message.
+ * 
+ * @param {string} value - The message content to validate.
+ * @param {string} [fieldName='Tin nhắn'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const messageContent = (value, fieldName = 'Tin nhắn') => {
     if (!value) return ValidationResult.success()
 
@@ -330,6 +456,13 @@ export const messageContent = (value, fieldName = 'Tin nhắn') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates hashtags in a post.
+ * 
+ * @param {string} value - The post content to validate hashtags in.
+ * @param {string} [fieldName='Hashtags'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const hashtags = (value, fieldName = 'Hashtags') => {
     if (!value) return ValidationResult.success()
 
@@ -349,6 +482,13 @@ export const hashtags = (value, fieldName = 'Hashtags') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates mentions in a post.
+ * 
+ * @param {string} value - The post content to validate mentions in.
+ * @param {string} [fieldName='Mentions'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const mentions = (value, fieldName = 'Mentions') => {
     if (!value) return ValidationResult.success()
 
@@ -361,7 +501,13 @@ export const mentions = (value, fieldName = 'Mentions') => {
     return ValidationResult.success()
 }
 
-// Security validation
+/**
+ * Validates that the input does not contain any XSS (Cross-Site Scripting) patterns.
+ * 
+ * @param {string} value - The input value to validate.
+ * @param {string} [fieldName='Trường này'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const noXSS = (value, fieldName = 'Trường này') => {
     if (!value) return ValidationResult.success()
 
@@ -381,6 +527,13 @@ export const noXSS = (value, fieldName = 'Trường này') => {
     return ValidationResult.success()
 }
 
+/**
+ * Validates that the input does not contain any SQL injection patterns.
+ * 
+ * @param {string} value - The input value to validate.
+ * @param {string} [fieldName='Trường này'] - An optional field name associated with the validation.
+ * @returns {ValidationResult} A validation result indicating success or failure.
+ */
 export const noSQLInjection = (value, fieldName = 'Trường này') => {
     if (!value) return ValidationResult.success()
 
@@ -398,7 +551,11 @@ export const noSQLInjection = (value, fieldName = 'Trường này') => {
     return ValidationResult.success()
 }
 
-// Form validation builder
+/**
+ * Form validation builder
+ * 
+ * @class
+ */
 export class FormValidator {
     constructor() {
         this.rules = new Map()
@@ -406,7 +563,14 @@ export class FormValidator {
         this.isValidating = false
     }
 
-    // Add validation rule for a field
+    /**
+     * Add validation rule for a field
+     * 
+     * @param {string} fieldName - The field name to add validation rule for.
+     * @param {Function} validator - The validator function to add.
+     * @param {string} [trigger='blur'] - The trigger event for validation (default 'blur').
+     * @returns {FormValidator} The FormValidator instance.
+     */
     addRule(fieldName, validator, trigger = 'blur') {
         if (!this.rules.has(fieldName)) {
             this.rules.set(fieldName, [])
@@ -420,7 +584,14 @@ export class FormValidator {
         return this
     }
 
-    // Add multiple validators for a field
+    /**
+     * Add multiple validators for a field
+     * 
+     * @param {string} fieldName - The field name to add validators for.
+     * @param {Array} validators - The validators to add.
+     * @param {string} [trigger='blur'] - The trigger event for validation (default 'blur').
+     * @returns {FormValidator} The FormValidator instance.
+     */
     field(fieldName, validators, trigger = 'blur') {
         if (!Array.isArray(validators)) {
             validators = [validators]
@@ -433,7 +604,14 @@ export class FormValidator {
         return this
     }
 
-    // Validate a single field
+    /**
+     * Validate a single field
+     * 
+     * @param {string} fieldName - The field name to validate.
+     * @param {any} value - The value to validate.
+     * @param {string} [trigger='blur'] - The trigger event for validation (default 'blur').
+     * @returns {Array} An array of error messages.
+     */
     validateField(fieldName, value, trigger = 'blur') {
         const fieldRules = this.rules.get(fieldName) || []
         const errors = []
@@ -459,7 +637,13 @@ export class FormValidator {
         return errors.length === 0
     }
 
-    // Validate entire form
+    /**
+     * Validate the entire form
+     * 
+     * @param {Object} formData - The form data to validate.
+     * @param {string} [trigger='submit'] - The trigger event for validation (default 'submit').
+     * @returns {boolean} `true` if the form is valid, `false` otherwise.
+     */
     validateForm(formData, trigger = 'submit') {
         this.isValidating = true
         let isValid = true
@@ -476,54 +660,93 @@ export class FormValidator {
         return isValid
     }
 
-    // Get errors for a field
+    /**
+     * Get errors for a field
+     * 
+     * @param {string} fieldName - The field name to get errors for.
+     * @returns {Array} An array of error messages.
+     */
     getFieldErrors(fieldName) {
         return this.errors.get(fieldName) || []
     }
 
-    // Get all errors
+    /**
+     * Get all errors
+     * 
+     * @returns {Object} An object containing field names as keys and error messages as values.
+     */
     getAllErrors() {
         return Object.fromEntries(this.errors)
     }
 
     // Check if field has errors
+    /**
+     * Check if a field has errors
+     * 
+     * @param {string} fieldName - The field name to check.
+     * @returns {boolean} `true` if the field has errors, `false` otherwise.
+     */
     hasFieldError(fieldName) {
         return this.errors.has(fieldName)
     }
 
-    // Check if form has any errors
+    /**
+     * Check if form has any errors
+     * 
+     * @returns {boolean} `true` if the form has errors, `false` otherwise.
+     */
     hasErrors() {
         return this.errors.size > 0
     }
 
-    // Clear errors for a field
+    /**
+     * Clear errors for a field
+     * 
+     * @param {string} fieldName - The field name to clear errors for.
+     */
     clearFieldErrors(fieldName) {
         this.errors.delete(fieldName)
     }
 
-    // Clear all errors
+    /**
+     * Clear all errors
+     */
     clearAllErrors() {
         this.errors.clear()
     }
 
-    // Reset validator
+    /**
+     * Reset validator
+     */
     reset() {
         this.errors.clear()
         this.isValidating = false
     }
 }
 
-// Pre-built form validators
+/** ========================
+ * Pre-built form validators
+ * ========================
+ */
+/**
+ * Creates a validator for the login form.
+ * 
+ * @returns {FormValidator} A form validator configured to validate email and password fields.
+ */
 export const createLoginValidator = () => {
     return new FormValidator()
         .field('email', [required, email], 'blur')
         .field('password', [required], 'blur')
 }
 
+/**
+ * Creates a validator for the register form.
+ * 
+ * @returns {FormValidator} A form validator configured to validate email, password, confirmPassword, firstName, lastName, birthDate, and agreeTerms fields.
+ */
 export const createRegisterValidator = () => {
     return new FormValidator()
         .field('email', [required, email], 'blur')
-        .field('username', [required, username], 'blur')
         .field('password', [required, password], 'blur')
         .field('confirmPassword', [], 'blur') // Will be handled separately
         .field('firstName', [required, minLength(2), maxLength(50)], 'blur')
@@ -532,22 +755,42 @@ export const createRegisterValidator = () => {
         .field('agreeTerms', [required], 'change')
 }
 
+/**
+ * Creates a validator for the post form.
+ * 
+ * @returns {FormValidator} A form validator configured to validate content and privacy fields.
+ */
 export const createPostValidator = () => {
     return new FormValidator()
         .field('content', [required, postContent, noXSS, hashtags, mentions], 'input')
         .field('privacy', [required, oneOf(['public', 'friends', 'private'])], 'change')
 }
 
+/**
+ * Creates a validator for the comment form.
+ * 
+ * @returns {FormValidator} A form validator configured to validate content field.
+ */
 export const createCommentValidator = () => {
     return new FormValidator()
         .field('content', [required, commentContent, noXSS], 'input')
 }
 
+/**
+ * Creates a validator for the message form.
+ * 
+ * @returns {FormValidator} A form validator configured to validate content field.
+ */
 export const createMessageValidator = () => {
     return new FormValidator()
         .field('content', [required, messageContent, noXSS], 'input')
 }
 
+/**
+ * Creates a validator for the profile form.
+ * 
+ * @returns {FormValidator} A form validator configured to validate firstName, lastName, bio, website, and location fields.
+ */
 export const createProfileValidator = () => {
     return new FormValidator()
         .field('firstName', [required, minLength(2), maxLength(50)], 'blur')
@@ -557,6 +800,11 @@ export const createProfileValidator = () => {
         .field('location', [maxLength(100)], 'blur')
 }
 
+/**
+ * Creates a validator for the password change form.
+ * 
+ * @returns {FormValidator} A form validator configured to validate currentPassword, newPassword, and confirmNewPassword fields.
+ */
 export const createPasswordChangeValidator = () => {
     return new FormValidator()
         .field('currentPassword', [required], 'blur')
@@ -564,10 +812,22 @@ export const createPasswordChangeValidator = () => {
         .field('confirmNewPassword', [], 'blur') // Will be handled separately
 }
 
-// Export validation result class
+/**
+ * Export validation result class
+ */
 export { ValidationResult }
 
-// Utility functions for validation
+/** ===============================
+ * Utility functions for validation
+ * ===============================
+ */
+
+/**
+ * Combines multiple validators into a single validator function.
+ * 
+ * @param {...Function} validators - The validators to combine.
+ * @returns {Function} A validator function that takes a value and an optional field name.
+ */
 export const combineValidators = (...validators) => {
     return (value, fieldName) => {
         for (const validator of validators) {
@@ -580,6 +840,13 @@ export const combineValidators = (...validators) => {
     }
 }
 
+/**
+ * Creates a conditional validator.
+ * 
+ * @param {Function} condition - The condition function to determine if the validator should be applied.
+ * @param {Function} validator - The validator function to apply if the condition is true.
+ * @returns {Function} A validator function that takes a value, field name, and form data.
+ */
 export const conditionalValidator = (condition, validator) => {
     return (value, fieldName, formData) => {
         if (condition(value, formData)) {
@@ -589,6 +856,12 @@ export const conditionalValidator = (condition, validator) => {
     }
 }
 
+/**
+ * Creates an async validator.
+ * 
+ * @param {Function} validatorFn - The async validator function to apply.
+ * @returns {Function} An async validator function that takes a value and an optional field name.
+ */
 export const asyncValidator = (validatorFn) => {
     return async (value, fieldName) => {
         try {
@@ -603,7 +876,9 @@ export const asyncValidator = (validatorFn) => {
     }
 }
 
-// Export all validators
+/**
+ * Export all validators
+ */
 export default {
     // Base validators
     required,
@@ -618,7 +893,6 @@ export default {
     // Specific validators
     email,
     phone,
-    username,
     password,
     confirmPassword,
     url,
