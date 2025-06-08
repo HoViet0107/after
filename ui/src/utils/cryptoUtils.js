@@ -4,7 +4,7 @@
  * Generate cryptographically secure random string
  * @param {number} length - Length of random string
  * @param {string} charset - Character set to use
- * @returns {string} Random string
+ * @returns {string} Random string(e.g: 'vFMBSRKASMHgDQTEhNyzipBx3guhkjds')
  */
 export const generateSecureRandom = (length = 32, charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') => {
     if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
