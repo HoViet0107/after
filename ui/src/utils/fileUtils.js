@@ -318,7 +318,7 @@ export const downloadFile = (url, filename, options = {}) => {
 }
 
 /**
- * Create download link cho blob/file
+ * Create download link for blob/file
  * @param {Blob|File} blob - Blob data
  * @param {string} filename - Download filename
  * @param {boolean} autoClick - Auto click download link
@@ -348,7 +348,7 @@ export const createDownloadLink = (blob, filename, autoClick = true) => {
 
 /**
  * Read file content
- * @param {File} file - File cần đọc
+ * @param {File} file - File to read
  * @param {string} readAs - Read method (text, dataURL, arrayBuffer, binaryString)
  * @returns {Promise} File content
  */
@@ -390,7 +390,7 @@ export const readFile = (file, readAs = 'text') => {
 
 /**
  * Convert file to base64
- * @param {File} file - File cần convert
+ * @param {File} file - File to convert
  * @returns {Promise<string>} Base64 string
  */
 export const fileToBase64 = (file) => {
@@ -416,7 +416,7 @@ export const base64ToBlob = (base64, mimeType = '') => {
 }
 
 /**
- * Get file extension từ filename
+ * Get file extension from filename(e.g: filename.txt -> txt)
  * @param {string} filename - Filename
  * @returns {string} File extension
  */
@@ -427,7 +427,7 @@ export const getFileExtension = (filename) => {
 }
 
 /**
- * Get filename without extension
+ * Get filename without extension(e.g: filename.txt -> filename)
  * @param {string} filename - Full filename
  * @returns {string} Filename without extension
  */
@@ -438,7 +438,7 @@ export const getFileNameWithoutExtension = (filename) => {
 }
 
 /**
- * Get MIME type từ file extension
+ * Get MIME type from file extension(e.g: txt -> text/plain)
  * @param {string} extension - File extension
  * @returns {string} MIME type
  */
@@ -498,7 +498,7 @@ export const getMimeTypeFromExtension = (extension) => {
 }
 
 /**
- * Check if file là image
+ * Check if file is image
  * @param {File|string} file - File object hoặc MIME type string
  * @returns {boolean} True if image
  */
@@ -508,7 +508,7 @@ export const isImageFile = (file) => {
 }
 
 /**
- * Check if file là video
+ * Check if file is video
  * @param {File|string} file - File object hoặc MIME type string
  * @returns {boolean} True if video
  */
@@ -518,7 +518,7 @@ export const isVideoFile = (file) => {
 }
 
 /**
- * Check if file là audio
+ * Check if file is audio
  * @param {File|string} file - File object hoặc MIME type string
  * @returns {boolean} True if audio
  */
@@ -528,7 +528,7 @@ export const isAudioFile = (file) => {
 }
 
 /**
- * Check if file là document
+ * Check if file is document
  * @param {File|string} file - File object hoặc MIME type string
  * @returns {boolean} True if document
  */
@@ -549,7 +549,7 @@ export const isDocumentFile = (file) => {
 }
 
 /**
- * Generate unique filename để tránh conflicts
+ * Generate unique filename to avoid conflicts
  * @param {string} originalName - Original filename
  * @param {Array<string>} existingNames - Existing filenames
  * @returns {string} Unique filename
@@ -571,8 +571,8 @@ export const generateUniqueFilename = (originalName, existingNames = []) => {
 }
 
 /**
- * Chunk file thành parts nhỏ cho upload
- * @param {File} file - File cần chunk
+ * Chunk file into smaller parts for upload
+ * @param {File} file - File to chunk
  * @param {number} chunkSize - Size of each chunk in bytes
  * @returns {Array<Blob>} Array of file chunks
  */
@@ -590,7 +590,7 @@ export const chunkFile = (file, chunkSize = 1024 * 1024) => { // 1MB default
 }
 
 /**
- * Parse response headers thành object
+ * Parse response headers into object
  * @param {string} headerString - Raw header string
  * @returns {Object} Parsed headers
  */
@@ -626,7 +626,7 @@ export const createFileInput = (options = {}) => {
     input.accept = accept
     input.multiple = multiple
     if (capture) input.capture = capture
-    input.style.display = 'none'
+    input.style.display = 'none' // Hide the input element
 
     if (onChange) {
         input.addEventListener('change', onChange)
@@ -635,10 +635,14 @@ export const createFileInput = (options = {}) => {
     return input
 }
 
+
 /**
- * Trigger file selection dialog
- * @param {Object} options - Selection options
- * @returns {Promise<FileList>} Selected files
+ * Prompt user to select files
+ * @param {Object} [options] - File input options
+ * @param {string} [options.accept] - Accepted file types
+ * @param {boolean} [options.multiple] - Allow multiple files
+ * @param {boolean} [options.capture] - Capture camera for mobile devices
+ * @returns {Promise<File[]>} Promise that resolves with selected files
  */
 export const selectFiles = (options = {}) => {
     return new Promise((resolve) => {
