@@ -1,499 +1,655 @@
+// src/stores/ui.js
+// UI state store với theme management, responsive design và user preferences
+
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { useBreakpoints, breakpointsTailwind } from '@vueuse/core'
 
 export const useUIStore = defineStore('ui', () => {
-    // Breakpoints for responsive design
-    const breakpoints = useBreakpoints(breakpointsTailwind)
-
-    // Theme management
-    const theme = ref(localStorage.getItem('social_theme') || 'light')
-    const systemTheme = ref('light')
-    const themePreference = ref(localStorage.getItem('social_theme_preference') || 'system')
-
-    // Layout state
-    const sidebarCollapsed = ref(localStorage.getItem('social_sidebar_collapsed') === 'true')
-    const isMobile = computed(() => breakpoints.smaller('md').value)
-    const isTablet = computed(() => breakpoints.between('md', 'lg').value)
-    const isDesktop = computed(() => breakpoints.greater('lg').value)
-
     // Loading states
     const isLoading = ref(false)
-    const loadingMessage = ref('')
-    const loadingProgress = ref(0)
+    const loadingStates = ref(new Map())
+    const globalLoadingCount = ref(0)
 
-    // Modal management
+    // Theme and appearance
+    const theme = ref(localStorage.getItem('ui_theme') || 'light')
+    const isDarkMode = computed(() => theme.value === 'dark')
+    const fontSize = ref(localStorage.getItem('ui_font_size') || 'medium')
+    const colorScheme = ref(localStorage.getItem('ui_color_scheme') || 'default')
+    const reducedMotion = ref(localStorage.getItem('ui_reduced_motion') === 'true')
+    const highContrast = ref(localStorage.getItem('ui_high_contrast') === 'true')
+
+    // Layout states
+    const sidebarCollapsed = ref(localStorage.getItem('ui_sidebar_collapsed') === 'true')
+    const sidebarVisible = ref(true)
+    const headerVisible = ref(true)
+    const footerVisible = ref(true)
+    const compactMode = ref(localStorage.getItem('ui_compact_mode') === 'true')
+
+    // Screen and device detection
+    const screenSize = ref(getScreenSize())
+    const isMobile = computed(() => screenSize.value === 'xs' || screenSize.value === 'sm')
+    const isTablet = computed(() => screenSize.value === 'md')
+    const isDesktop = computed(() => screenSize.value === 'lg' || screenSize.value === 'xl')
+    const deviceType = ref(getDeviceType())
+    const orientation = ref(getOrientation())
+
+    // Modal and overlay states
     const modals = ref(new Map())
     const activeModal = ref(null)
+    const overlayVisible = ref(false)
+    const modalBackdrop = ref(true)
 
-    // Toast/Notification state
-    const notifications = ref([])
-    const maxNotifications = ref(5)
+    // Toast notifications queue
+    const toasts = ref([])
+    const maxToasts = ref(5)
 
-    // Search state
-    const searchOpen = ref(false)
-    const searchQuery = ref('')
-    const searchResults = ref([])
-    const searchLoading = ref(false)
-
-    // Navigation state
+    // Navigation states
+    const breadcrumbs = ref([])
     const navigationHistory = ref([])
     const canGoBack = computed(() => navigationHistory.value.length > 1)
 
-    // Page state
-    const pageTitle = ref('')
-    const pageLoading = ref(false)
-    const pageError = ref(null)
+    // Performance and accessibility
+    const animationsEnabled = ref(!reducedMotion.value)
+    const soundEnabled = ref(localStorage.getItem('ui_sound_enabled') !== 'false')
+    const keyboardNavigation = ref(false)
+    const touchNavigation = ref('ontouchstart' in window)
 
-    // Form state
-    const unsavedChanges = ref(new Set())
-    const hasUnsavedChanges = computed(() => unsavedChanges.value.size > 0)
-
-    // Focus management
-    const focusedElement = ref(null)
-    const focusTrap = ref(false)
-
-    // Scroll state
-    const scrollPosition = ref(0)
-    const isScrollingUp = ref(false)
-    const isScrollingDown = ref(false)
-    const showScrollToTop = ref(false)
-
-    // Connectivity state
-    const isOnline = ref(navigator.onLine)
-    const lastOnlineTime = ref(Date.now())
-
-    // Performance state
-    const performanceMetrics = ref({
-        loadTime: 0,
-        renderTime: 0,
-        interactionTime: 0
+    // User preferences
+    const preferences = ref({
+        language: localStorage.getItem('ui_language') || 'vi',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        dateFormat: localStorage.getItem('ui_date_format') || 'DD/MM/YYYY',
+        timeFormat: localStorage.getItem('ui_time_format') || '24h',
+        numberFormat: localStorage.getItem('ui_number_format') || 'vi-VN'
     })
 
-    // Accessibility state
-    const highContrastMode = ref(localStorage.getItem('social_high_contrast') === 'true')
-    const reducedMotion = ref(localStorage.getItem('social_reduced_motion') === 'true')
-    const screenReaderMode = ref(false)
-    const fontSize = ref(localStorage.getItem('social_font_size') || 'medium')
+    // Chat and messaging UI states
+    const chatSidebarVisible = ref(!isMobile.value)
+    const chatInputFocused = ref(false)
+    const typingIndicatorVisible = ref(false)
+    const emojiPickerVisible = ref(false)
 
-    // Quick actions state
-    const quickActionsOpen = ref(false)
-    const commandPaletteOpen = ref(false)
+    // Feed and content UI states
+    const feedRefreshing = ref(false)
+    const infiniteScrollEnabled = ref(true)
+    const autoPlayVideos = ref(localStorage.getItem('ui_autoplay_videos') !== 'false')
+    const showImagePreviews = ref(localStorage.getItem('ui_image_previews') !== 'false')
 
-    // Computed properties
-    const currentTheme = computed(() => {
-        if (themePreference.value === 'system') {
-            return systemTheme.value
+    // Search and filters
+    const searchVisible = ref(false)
+    const filtersVisible = ref(false)
+    const activeFilters = ref(new Map())
+
+    // Watchers for persistence
+    watch(theme, (newTheme) => {
+        localStorage.setItem('ui_theme', newTheme)
+        applyTheme(newTheme)
+    })
+
+    watch(fontSize, (newSize) => {
+        localStorage.setItem('ui_font_size', newSize)
+        applyFontSize(newSize)
+    })
+
+    watch(colorScheme, (newScheme) => {
+        localStorage.setItem('ui_color_scheme', newScheme)
+        applyColorScheme(newScheme)
+    })
+
+    watch(sidebarCollapsed, (collapsed) => {
+        localStorage.setItem('ui_sidebar_collapsed', collapsed.toString())
+    })
+
+    watch(compactMode, (compact) => {
+        localStorage.setItem('ui_compact_mode', compact.toString())
+    })
+
+    watch(reducedMotion, (reduced) => {
+        localStorage.setItem('ui_reduced_motion', reduced.toString())
+        animationsEnabled.value = !reduced
+    })
+
+    watch(highContrast, (contrast) => {
+        localStorage.setItem('ui_high_contrast', contrast.toString())
+        applyHighContrast(contrast)
+    })
+
+    watch(soundEnabled, (enabled) => {
+        localStorage.setItem('ui_sound_enabled', enabled.toString())
+    })
+
+    watch(autoPlayVideos, (enabled) => {
+        localStorage.setItem('ui_autoplay_videos', enabled.toString())
+    })
+
+    watch(showImagePreviews, (enabled) => {
+        localStorage.setItem('ui_image_previews', enabled.toString())
+    })
+
+    // Loading management
+    const setLoading = (loading, key = 'global') => {
+        if (key === 'global') {
+            isLoading.value = loading
+            if (loading) {
+                globalLoadingCount.value++
+            } else {
+                globalLoadingCount.value = Math.max(0, globalLoadingCount.value - 1)
+            }
+        } else {
+            if (loading) {
+                loadingStates.value.set(key, true)
+            } else {
+                loadingStates.value.delete(key)
+            }
         }
-        return theme.value
-    })
-
-    const isDarkMode = computed(() => currentTheme.value === 'dark')
-    const isLightMode = computed(() => currentTheme.value === 'light')
-
-    const hasActiveModal = computed(() => activeModal.value !== null)
-
-    const deviceType = computed(() => {
-        if (isMobile.value) return 'mobile'
-        if (isTablet.value) return 'tablet'
-        return 'desktop'
-    })
-
-    // Actions
-    const setTheme = (newTheme) => {
-        theme.value = newTheme
-        themePreference.value = newTheme === 'system' ? 'system' : 'manual'
-
-        localStorage.setItem('social_theme', newTheme)
-        localStorage.setItem('social_theme_preference', themePreference.value)
-
-        updateDocumentTheme()
     }
 
+    const isLoadingKey = (key) => {
+        return loadingStates.value.has(key)
+    }
+
+    const hasAnyLoading = computed(() => {
+        return globalLoadingCount.value > 0 || loadingStates.value.size > 0
+    })
+
+    // Theme management
     const toggleTheme = () => {
-        const newTheme = currentTheme.value === 'light' ? 'dark' : 'light'
-        setTheme(newTheme)
+        theme.value = theme.value === 'light' ? 'dark' : 'light'
     }
 
-    const updateDocumentTheme = () => {
-        document.documentElement.setAttribute('data-bs-theme', currentTheme.value)
-        document.documentElement.classList.toggle('dark', isDarkMode.value)
-        document.documentElement.classList.toggle('light', isLightMode.value)
+    const setTheme = (newTheme) => {
+        if (['light', 'dark', 'auto'].includes(newTheme)) {
+            theme.value = newTheme
+        }
     }
 
-    const detectSystemTheme = () => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-        systemTheme.value = mediaQuery.matches ? 'dark' : 'light'
+    const applyTheme = (themeName) => {
+        document.documentElement.setAttribute('data-theme', themeName)
 
-        mediaQuery.addEventListener('change', (e) => {
-            systemTheme.value = e.matches ? 'dark' : 'light'
-        })
+        if (themeName === 'dark') {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
     }
 
-    // Sidebar actions
+    // Font size management
+    const setFontSize = (size) => {
+        if (['small', 'medium', 'large', 'extra-large'].includes(size)) {
+            fontSize.value = size
+        }
+    }
+
+    const applyFontSize = (size) => {
+        document.documentElement.setAttribute('data-font-size', size)
+
+        const sizeMap = {
+            'small': '14px',
+            'medium': '16px',
+            'large': '18px',
+            'extra-large': '20px'
+        }
+
+        document.documentElement.style.setProperty('--base-font-size', sizeMap[size])
+    }
+
+    // Color scheme management
+    const setColorScheme = (scheme) => {
+        colorScheme.value = scheme
+    }
+
+    const applyColorScheme = (scheme) => {
+        document.documentElement.setAttribute('data-color-scheme', scheme)
+    }
+
+    // Accessibility
+    const toggleReducedMotion = () => {
+        reducedMotion.value = !reducedMotion.value
+    }
+
+    const toggleHighContrast = () => {
+        highContrast.value = !highContrast.value
+    }
+
+    const applyHighContrast = (enabled) => {
+        if (enabled) {
+            document.documentElement.classList.add('high-contrast')
+        } else {
+            document.documentElement.classList.remove('high-contrast')
+        }
+    }
+
+    const enableKeyboardNavigation = () => {
+        keyboardNavigation.value = true
+        document.documentElement.classList.add('keyboard-navigation')
+    }
+
+    const disableKeyboardNavigation = () => {
+        keyboardNavigation.value = false
+        document.documentElement.classList.remove('keyboard-navigation')
+    }
+
+    // Layout management
     const toggleSidebar = () => {
         sidebarCollapsed.value = !sidebarCollapsed.value
-        localStorage.setItem('social_sidebar_collapsed', sidebarCollapsed.value.toString())
     }
 
-    const collapseSidebar = () => {
-        sidebarCollapsed.value = true
-        localStorage.setItem('social_sidebar_collapsed', 'true')
+    const setSidebarVisible = (visible) => {
+        sidebarVisible.value = visible
     }
 
-    const expandSidebar = () => {
-        sidebarCollapsed.value = false
-        localStorage.setItem('social_sidebar_collapsed', 'false')
+    const toggleCompactMode = () => {
+        compactMode.value = !compactMode.value
     }
 
-    // Loading actions
-    const setLoading = (loading, message = '') => {
-        isLoading.value = loading
-        loadingMessage.value = message
-        if (!loading) {
-            loadingProgress.value = 0
+    const setCompactMode = (compact) => {
+        compactMode.value = compact
+    }
+
+    // Modal management
+    const openModal = (modalId, options = {}) => {
+        const modal = {
+            id: modalId,
+            visible: true,
+            backdrop: options.backdrop !== false,
+            keyboard: options.keyboard !== false,
+            focus: options.focus !== false,
+            ...options
         }
-    }
 
-    const setLoadingProgress = (progress) => {
-        loadingProgress.value = Math.max(0, Math.min(100, progress))
-    }
-
-    // Modal actions
-    const openModal = (modalId, props = {}) => {
-        modals.value.set(modalId, { id: modalId, props, isOpen: true })
+        modals.value.set(modalId, modal)
         activeModal.value = modalId
-        document.body.classList.add('modal-open')
+        overlayVisible.value = true
+
+        // Prevent body scroll
+        if (modal.backdrop) {
+            document.body.classList.add('modal-open')
+        }
+
+        return modal
     }
 
     const closeModal = (modalId) => {
         if (modals.value.has(modalId)) {
             modals.value.delete(modalId)
-        }
 
-        if (activeModal.value === modalId) {
-            activeModal.value = null
-            document.body.classList.remove('modal-open')
+            if (activeModal.value === modalId) {
+                activeModal.value = null
+            }
+
+            // Check if any modals are still open
+            if (modals.value.size === 0) {
+                overlayVisible.value = false
+                document.body.classList.remove('modal-open')
+            }
         }
     }
 
     const closeAllModals = () => {
         modals.value.clear()
         activeModal.value = null
+        overlayVisible.value = false
         document.body.classList.remove('modal-open')
     }
 
-    // Search actions
-    const toggleSearch = () => {
-        searchOpen.value = !searchOpen.value
-        if (!searchOpen.value) {
-            searchQuery.value = ''
-            searchResults.value = []
+    const isModalOpen = (modalId) => {
+        return modals.value.has(modalId) && modals.value.get(modalId).visible
+    }
+
+    // Toast management
+    const addToast = (toast) => {
+        const toastId = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+        const toastItem = {
+            id: toastId,
+            type: toast.type || 'info',
+            title: toast.title,
+            message: toast.message,
+            duration: toast.duration || 5000,
+            actions: toast.actions || [],
+            timestamp: Date.now(),
+            ...toast
+        }
+
+        toasts.value.push(toastItem)
+
+        // Remove oldest toasts if exceeding limit
+        if (toasts.value.length > maxToasts.value) {
+            toasts.value.splice(0, toasts.value.length - maxToasts.value)
+        }
+
+        // Auto remove after duration
+        if (toastItem.duration > 0) {
+            setTimeout(() => {
+                removeToast(toastId)
+            }, toastItem.duration)
+        }
+
+        return toastId
+    }
+
+    const removeToast = (toastId) => {
+        const index = toasts.value.findIndex(toast => toast.id === toastId)
+        if (index !== -1) {
+            toasts.value.splice(index, 1)
         }
     }
 
-    const openSearch = () => {
-        searchOpen.value = true
+    const clearToasts = () => {
+        toasts.value = []
     }
 
-    const closeSearch = () => {
-        searchOpen.value = false
-        searchQuery.value = ''
-        searchResults.value = []
+    // Navigation management
+    const setBreadcrumbs = (crumbs) => {
+        breadcrumbs.value = crumbs
     }
 
-    const setSearchQuery = (query) => {
-        searchQuery.value = query
+    const addBreadcrumb = (crumb) => {
+        breadcrumbs.value.push(crumb)
     }
 
-    const setSearchResults = (results) => {
-        searchResults.value = results
-    }
+    const updateNavigationHistory = (route) => {
+        navigationHistory.value.push({
+            path: route.path,
+            name: route.name,
+            timestamp: Date.now()
+        })
 
-    const setSearchLoading = (loading) => {
-        searchLoading.value = loading
-    }
-
-    // Navigation actions
-    const pushToHistory = (route) => {
-        navigationHistory.value.push(route)
+        // Keep only last 50 entries
         if (navigationHistory.value.length > 50) {
             navigationHistory.value.shift()
         }
     }
 
-    const goBack = () => {
-        if (canGoBack.value) {
-            navigationHistory.value.pop()
-            return navigationHistory.value[navigationHistory.value.length - 1]
-        }
-        return null
+    // Screen size detection
+    const updateScreenSize = () => {
+        screenSize.value = getScreenSize()
+        deviceType.value = getDeviceType()
+        orientation.value = getOrientation()
     }
 
-    // Page actions
-    const setPageTitle = (title) => {
-        pageTitle.value = title
-        document.title = title ? `${title} - Social Connect` : 'Social Connect'
+    // Chat UI management
+    const toggleChatSidebar = () => {
+        chatSidebarVisible.value = !chatSidebarVisible.value
     }
 
-    const setPageLoading = (loading) => {
-        pageLoading.value = loading
+    const setChatInputFocus = (focused) => {
+        chatInputFocused.value = focused
     }
 
-    const setPageError = (error) => {
-        pageError.value = error
+    const showEmojiPicker = () => {
+        emojiPickerVisible.value = true
     }
 
-    // Form state actions
-    const addUnsavedChanges = (formId) => {
-        unsavedChanges.value.add(formId)
+    const hideEmojiPicker = () => {
+        emojiPickerVisible.value = false
     }
 
-    const removeUnsavedChanges = (formId) => {
-        unsavedChanges.value.delete(formId)
+    const toggleEmojiPicker = () => {
+        emojiPickerVisible.value = !emojiPickerVisible.value
     }
 
-    const clearAllUnsavedChanges = () => {
-        unsavedChanges.value.clear()
+    // Feed UI management
+    const setFeedRefreshing = (refreshing) => {
+        feedRefreshing.value = refreshing
     }
 
-    // Focus management
-    const setFocus = (element) => {
-        focusedElement.value = element
-        if (element) {
-            element.focus()
-        }
+    const toggleAutoPlayVideos = () => {
+        autoPlayVideos.value = !autoPlayVideos.value
     }
 
-    const enableFocusTrap = () => {
-        focusTrap.value = true
+    const toggleImagePreviews = () => {
+        showImagePreviews.value = !showImagePreviews.value
     }
 
-    const disableFocusTrap = () => {
-        focusTrap.value = false
+    // Search and filters
+    const toggleSearch = () => {
+        searchVisible.value = !searchVisible.value
     }
 
-    // Scroll actions
-    const updateScrollPosition = (position) => {
-        const previousPosition = scrollPosition.value
-        scrollPosition.value = position
-
-        isScrollingUp.value = position < previousPosition
-        isScrollingDown.value = position > previousPosition
-        showScrollToTop.value = position > 300
+    const setSearchVisible = (visible) => {
+        searchVisible.value = visible
     }
 
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+    const toggleFilters = () => {
+        filtersVisible.value = !filtersVisible.value
     }
 
-    // Connectivity actions
-    const setOnlineStatus = (online) => {
-        isOnline.value = online
-        if (online) {
-            lastOnlineTime.value = Date.now()
+    const setFilter = (key, value) => {
+        if (value === null || value === undefined) {
+            activeFilters.value.delete(key)
+        } else {
+            activeFilters.value.set(key, value)
         }
     }
 
-    // Performance actions
-    const updatePerformanceMetrics = (metrics) => {
-        performanceMetrics.value = { ...performanceMetrics.value, ...metrics }
+    const clearFilters = () => {
+        activeFilters.value.clear()
     }
 
-    // Accessibility actions
-    const toggleHighContrast = () => {
-        highContrastMode.value = !highContrastMode.value
-        localStorage.setItem('social_high_contrast', highContrastMode.value.toString())
-        document.documentElement.classList.toggle('high-contrast', highContrastMode.value)
+    const getFilter = (key) => {
+        return activeFilters.value.get(key)
     }
 
-    const toggleReducedMotion = () => {
-        reducedMotion.value = !reducedMotion.value
-        localStorage.setItem('social_reduced_motion', reducedMotion.value.toString())
-        document.documentElement.classList.toggle('reduced-motion', reducedMotion.value)
+    // Preferences management
+    const updatePreference = (key, value) => {
+        preferences.value[key] = value
+        localStorage.setItem(`ui_${key}`, value)
     }
 
-    const setScreenReaderMode = (enabled) => {
-        screenReaderMode.value = enabled
-    }
-
-    const setFontSize = (size) => {
-        fontSize.value = size
-        localStorage.setItem('social_font_size', size)
-        document.documentElement.setAttribute('data-font-size', size)
-    }
-
-    // Quick actions
-    const toggleQuickActions = () => {
-        quickActionsOpen.value = !quickActionsOpen.value
-    }
-
-    const toggleCommandPalette = () => {
-        commandPaletteOpen.value = !commandPaletteOpen.value
-    }
-
-    // Notification actions
-    const addNotification = (notification) => {
-        const id = Date.now().toString()
-        notifications.value.unshift({ id, ...notification, timestamp: Date.now() })
-
-        if (notifications.value.length > maxNotifications.value) {
-            notifications.value = notifications.value.slice(0, maxNotifications.value)
+    const resetPreferences = () => {
+        // Reset to defaults
+        preferences.value = {
+            language: 'vi',
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            dateFormat: 'DD/MM/YYYY',
+            timeFormat: '24h',
+            numberFormat: 'vi-VN'
         }
 
-        return id
+        // Clear localStorage
+        Object.keys(preferences.value).forEach(key => {
+            localStorage.removeItem(`ui_${key}`)
+        })
     }
 
-    const removeNotification = (id) => {
-        const index = notifications.value.findIndex(n => n.id === id)
-        if (index !== -1) {
-            notifications.value.splice(index, 1)
+    // Utility functions
+    function getScreenSize() {
+        const width = window.innerWidth
+
+        if (width < 576) return 'xs'
+        if (width < 768) return 'sm'
+        if (width < 992) return 'md'
+        if (width < 1200) return 'lg'
+        return 'xl'
+    }
+
+    function getDeviceType() {
+        const userAgent = navigator.userAgent
+
+        if (/tablet|ipad|playbook|silk/i.test(userAgent)) {
+            return 'tablet'
         }
+
+        if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(userAgent)) {
+            return 'mobile'
+        }
+
+        return 'desktop'
     }
 
-    const clearAllNotifications = () => {
-        notifications.value = []
+    function getOrientation() {
+        return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'
     }
 
-    // Watchers
-    watch(currentTheme, updateDocumentTheme, { immediate: true })
+    // Event listeners setup
+    const setupEventListeners = () => {
+        // Screen size changes
+        window.addEventListener('resize', updateScreenSize)
 
-    watch(isOnline, (online) => {
-        if (!online) {
-            addNotification({
-                type: 'warning',
-                title: 'Mất kết nối',
-                message: 'Bạn đang offline. Một số tính năng có thể không khả dụng.',
-                persistent: true
-            })
-        } else if (!online && lastOnlineTime.value) {
-            removeNotification('offline')
-            addNotification({
-                type: 'success',
-                title: 'Đã kết nối lại',
-                message: 'Kết nối mạng đã được khôi phục.',
-                duration: 3000
+        // Keyboard navigation detection
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                enableKeyboardNavigation()
+            }
+        })
+
+        window.addEventListener('mousedown', () => {
+            disableKeyboardNavigation()
+        })
+
+        // Orientation change
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateScreenSize, 100)
+        })
+
+        // Theme detection from system
+        if (window.matchMedia) {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+            mediaQuery.addEventListener('change', (e) => {
+                if (theme.value === 'auto') {
+                    applyTheme(e.matches ? 'dark' : 'light')
+                }
             })
         }
-    })
+
+        // Reduced motion detection
+        if (window.matchMedia) {
+            const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+            mediaQuery.addEventListener('change', (e) => {
+                reducedMotion.value = e.matches
+            })
+        }
+    }
 
     // Initialize
     const initialize = () => {
-        detectSystemTheme()
-        updateDocumentTheme()
+        // Apply saved settings
+        applyTheme(theme.value)
+        applyFontSize(fontSize.value)
+        applyColorScheme(colorScheme.value)
+        applyHighContrast(highContrast.value)
 
-        // Set initial accessibility classes
-        document.documentElement.classList.toggle('high-contrast', highContrastMode.value)
-        document.documentElement.classList.toggle('reduced-motion', reducedMotion.value)
-        document.documentElement.setAttribute('data-font-size', fontSize.value)
+        // Setup event listeners
+        setupEventListeners()
 
-        // Listen for online/offline events
-        window.addEventListener('online', () => setOnlineStatus(true))
-        window.addEventListener('offline', () => setOnlineStatus(false))
+        // Update screen size
+        updateScreenSize()
 
-        // Listen for scroll events
-        let ticking = false
-        window.addEventListener('scroll', () => {
-            if (!ticking) {
-                requestAnimationFrame(() => {
-                    updateScrollPosition(window.pageYOffset)
-                    ticking = false
-                })
-                ticking = true
-            }
-        }, { passive: true })
+        // Auto-detect system preferences if not set
+        if (theme.value === 'auto' && window.matchMedia) {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+            applyTheme(prefersDark ? 'dark' : 'light')
+        }
+
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            reducedMotion.value = true
+        }
     }
 
+    // Export public API
     return {
-        // State
-        theme,
-        systemTheme,
-        themePreference,
-        sidebarCollapsed,
-        isLoading,
-        loadingMessage,
-        loadingProgress,
-        modals,
-        activeModal,
-        notifications,
-        searchOpen,
-        searchQuery,
-        searchResults,
-        searchLoading,
-        navigationHistory,
-        pageTitle,
-        pageLoading,
-        pageError,
-        unsavedChanges,
-        focusedElement,
-        focusTrap,
-        scrollPosition,
-        isScrollingUp,
-        isScrollingDown,
-        showScrollToTop,
-        isOnline,
-        lastOnlineTime,
-        performanceMetrics,
-        highContrastMode,
-        reducedMotion,
-        screenReaderMode,
-        fontSize,
-        quickActionsOpen,
-        commandPaletteOpen,
+        // Loading
+        isLoading: computed(() => isLoading.value),
+        hasAnyLoading,
+        setLoading,
+        isLoadingKey,
 
-        // Computed
-        currentTheme,
+        // Theme
+        theme: computed(() => theme.value),
         isDarkMode,
-        isLightMode,
-        hasActiveModal,
-        deviceType,
+        fontSize: computed(() => fontSize.value),
+        colorScheme: computed(() => colorScheme.value),
+        reducedMotion: computed(() => reducedMotion.value),
+        highContrast: computed(() => highContrast.value),
+        animationsEnabled: computed(() => animationsEnabled.value),
+        soundEnabled: computed(() => soundEnabled.value),
+        toggleTheme,
+        setTheme,
+        setFontSize,
+        setColorScheme,
+        toggleReducedMotion,
+        toggleHighContrast,
+
+        // Layout
+        sidebarCollapsed: computed(() => sidebarCollapsed.value),
+        sidebarVisible: computed(() => sidebarVisible.value),
+        headerVisible: computed(() => headerVisible.value),
+        footerVisible: computed(() => footerVisible.value),
+        compactMode: computed(() => compactMode.value),
+        toggleSidebar,
+        setSidebarVisible,
+        toggleCompactMode,
+        setCompactMode,
+
+        // Screen
+        screenSize: computed(() => screenSize.value),
         isMobile,
         isTablet,
         isDesktop,
-        canGoBack,
-        hasUnsavedChanges,
+        deviceType: computed(() => deviceType.value),
+        orientation: computed(() => orientation.value),
+        touchNavigation: computed(() => touchNavigation.value),
+        keyboardNavigation: computed(() => keyboardNavigation.value),
 
-        // Actions
-        setTheme,
-        toggleTheme,
-        toggleSidebar,
-        collapseSidebar,
-        expandSidebar,
-        setLoading,
-        setLoadingProgress,
+        // Modals
+        modals: computed(() => modals.value),
+        activeModal: computed(() => activeModal.value),
+        overlayVisible: computed(() => overlayVisible.value),
         openModal,
         closeModal,
         closeAllModals,
+        isModalOpen,
+
+        // Toasts
+        toasts: computed(() => toasts.value),
+        addToast,
+        removeToast,
+        clearToasts,
+
+        // Navigation
+        breadcrumbs: computed(() => breadcrumbs.value),
+        navigationHistory: computed(() => navigationHistory.value),
+        canGoBack,
+        setBreadcrumbs,
+        addBreadcrumb,
+        updateNavigationHistory,
+
+        // Chat UI
+        chatSidebarVisible: computed(() => chatSidebarVisible.value),
+        chatInputFocused: computed(() => chatInputFocused.value),
+        emojiPickerVisible: computed(() => emojiPickerVisible.value),
+        toggleChatSidebar,
+        setChatInputFocus,
+        toggleEmojiPicker,
+        showEmojiPicker,
+        hideEmojiPicker,
+
+        // Feed UI
+        feedRefreshing: computed(() => feedRefreshing.value),
+        autoPlayVideos: computed(() => autoPlayVideos.value),
+        showImagePreviews: computed(() => showImagePreviews.value),
+        setFeedRefreshing,
+        toggleAutoPlayVideos,
+        toggleImagePreviews,
+
+        // Search and filters
+        searchVisible: computed(() => searchVisible.value),
+        filtersVisible: computed(() => filtersVisible.value),
+        activeFilters: computed(() => activeFilters.value),
         toggleSearch,
-        openSearch,
-        closeSearch,
-        setSearchQuery,
-        setSearchResults,
-        setSearchLoading,
-        pushToHistory,
-        goBack,
-        setPageTitle,
-        setPageLoading,
-        setPageError,
-        addUnsavedChanges,
-        removeUnsavedChanges,
-        clearAllUnsavedChanges,
-        setFocus,
-        enableFocusTrap,
-        disableFocusTrap,
-        updateScrollPosition,
-        scrollToTop,
-        setOnlineStatus,
-        updatePerformanceMetrics,
-        toggleHighContrast,
-        toggleReducedMotion,
-        setScreenReaderMode,
-        setFontSize,
-        toggleQuickActions,
-        toggleCommandPalette,
-        addNotification,
-        removeNotification,
-        clearAllNotifications,
+        setSearchVisible,
+        toggleFilters,
+        setFilter,
+        clearFilters,
+        getFilter,
+
+        // Preferences
+        preferences: computed(() => preferences.value),
+        updatePreference,
+        resetPreferences,
+
+        // Initialization
         initialize
     }
 })
