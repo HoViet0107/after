@@ -1,388 +1,338 @@
 <template>
-    <div class="message-input-container">
-        <!-- Reply Preview -->
-        <div v-if="replyingTo" class="reply-preview">
-            <div class="reply-content">
-                <div class="reply-user">
-                    <i class="fas fa-reply me-1"></i>
-                    Trả lời {{ replyingTo.senderName }}
-                </div>
-                <div class="reply-message">{{ truncateText(replyingTo.content, 100) }}</div>
-            </div>
-            <button type="button" class="btn-close reply-close" @click="clearReply" aria-label="Hủy trả lời"></button>
-        </div>
-
-        <!-- Edit Preview -->
-        <div v-if="editingMessage" class="edit-preview">
-            <div class="edit-content">
-                <div class="edit-label">
-                    <i class="fas fa-edit me-1"></i>
-                    Chỉnh sửa tin nhắn
-                </div>
-            </div>
-            <button type="button" class="btn-close edit-close" @click="clearEdit" aria-label="Hủy chỉnh sửa"></button>
-        </div>
-
-        <!-- File Preview -->
-        <div v-if="attachments.length > 0" class="attachments-preview">
-            <div class="attachments-list">
-                <div v-for="(file, index) in attachments" :key="index" class="attachment-item">
-                    <div class="attachment-preview">
-                        <img v-if="isImage(file)" :src="getFilePreview(file)" alt="Preview" class="attachment-image" />
-                        <div v-else class="attachment-file">
-                            <i :class="getFileIcon(file)" class="file-icon"></i>
-                            <span class="file-name">{{ file.name }}</span>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger attachment-remove"
-                        @click="removeAttachment(index)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Input Area -->
-        <div class="input-wrapper">
-            <div class="input-controls">
-                <!-- Attachment Button -->
-                <button type="button" class="btn btn-outline-secondary btn-sm me-2" @click="triggerFileInput"
-                    :disabled="disabled || isUploading" title="Đính kèm file">
+    <div class="message-input">
+        <div class="input-container">
+            <div class="input-wrapper">
+                <button class="btn btn-outline-secondary attachment-btn" @click="openFileDialog" :disabled="isUploading"
+                    title="Đính kèm file">
                     <i class="fas fa-paperclip"></i>
                 </button>
 
-                <!-- Emoji Button -->
-                <button type="button" class="btn btn-outline-secondary btn-sm me-2" @click="toggleEmojiPicker"
-                    :disabled="disabled" title="Chọn emoji">
-                    <i class="fas fa-smile"></i>
-                </button>
-            </div>
+                <div class="text-input-container">
+                    <textarea ref="textareaRef" v-model="message" class="form-control message-textarea"
+                        :placeholder="placeholder" rows="1" @input="handleInput" @keydown="handleKeydown"
+                        @paste="handlePaste" @focus="handleFocus" @blur="handleBlur"></textarea>
 
-            <!-- Text Input -->
-            <div class="input-field-wrapper">
-                <textarea ref="textInput" v-model="messageText" class="form-control message-input"
-                    :placeholder="placeholder" :disabled="disabled" rows="1" @keydown="handleKeyDown"
-                    @input="handleInput" @paste="handlePaste" @focus="handleFocus" @blur="handleBlur"></textarea>
+                    <div class="input-actions">
+                        <button class="btn btn-sm btn-outline-secondary" @click="toggleEmojiPicker" title="Thêm emoji">
+                            <i class="fas fa-smile"></i>
+                        </button>
 
-                <!-- Send Button -->
-                <button type="button" class="btn btn-primary send-button" @click="sendMessage"
-                    :disabled="!canSend || disabled || isSending" title="Gửi tin nhắn (Ctrl + Enter)">
+                        <button v-if="supportsVoiceRecording"
+                            :class="['btn btn-sm', isRecording ? 'btn-danger' : 'btn-outline-secondary']"
+                            @click="toggleVoiceRecording" :title="isRecording ? 'Dừng ghi âm' : 'Ghi âm'">
+                            <i :class="isRecording ? 'fas fa-stop' : 'fas fa-microphone'"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button :class="['btn', 'send-btn', canSend ? 'btn-primary' : 'btn-outline-secondary']"
+                    @click="handleSend" :disabled="!canSend || isSending" title="Gửi tin nhắn">
                     <span v-if="isSending" class="spinner-border spinner-border-sm"></span>
-                    <i v-else-if="editingMessage" class="fas fa-check"></i>
                     <i v-else class="fas fa-paper-plane"></i>
                 </button>
             </div>
-        </div>
 
-        <!-- Emoji Picker -->
-        <div v-if="showEmojiPicker" class="emoji-picker-wrapper">
-            <EmojiPicker @emoji-select="insertEmoji" @close="closeEmojiPicker" />
-        </div>
-
-        <!-- File Input -->
-        <input ref="fileInput" type="file" class="d-none" multiple :accept="acceptedFileTypes"
-            @change="handleFileSelect" />
-
-        <!-- Upload Progress -->
-        <div v-if="isUploading" class="upload-progress">
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" :style="{ width: uploadProgress + '%' }"
-                    :aria-valuenow="uploadProgress" aria-valuemin="0" aria-valuemax="100">
-                    {{ uploadProgress }}%
+            <!-- Reply preview -->
+            <div v-if="replyToMessage" class="reply-preview">
+                <div class="reply-content">
+                    <div class="reply-header">
+                        <span>Trả lời {{ replyToMessage.sender.name }}</span>
+                        <button class="btn btn-sm btn-outline-secondary" @click="cancelReply">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="reply-text">{{ truncateText(replyToMessage.content, 100) }}</div>
                 </div>
             </div>
+
+            <!-- Attachments preview -->
+            <div v-if="attachments.length > 0" class="attachments-preview">
+                <div v-for="(attachment, index) in attachments" :key="index" class="attachment-item">
+                    <img v-if="attachment.type === 'image'" :src="attachment.preview" :alt="attachment.name"
+                        class="attachment-preview">
+                    <div v-else class="attachment-file">
+                        <i class="fas fa-file"></i>
+                        <span>{{ attachment.name }}</span>
+                    </div>
+
+                    <button class="btn btn-danger btn-sm attachment-remove" @click="removeAttachment(index)">
+                        <i class="fas fa-times"></i>
+                    </button>
+
+                    <div v-if="attachment.progress < 100" class="upload-progress">
+                        <div class="progress">
+                            <div class="progress-bar" :style="{ width: attachment.progress + '%' }"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice recording indicator -->
+            <div v-if="isRecording" class="recording-indicator">
+                <div class="recording-animation">
+                    <div class="pulse"></div>
+                </div>
+                <span>{{ recordingDuration }}</span>
+                <button class="btn btn-sm btn-outline-secondary" @click="cancelRecording">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
         </div>
+
+        <input ref="fileInput" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+            style="display: none" @change="handleFileSelect">
+
+        <EmojiPicker :show="showEmojiPicker" @select="addEmoji" @close="showEmojiPicker = false" />
     </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useMessageStore } from '@/stores/message'
-import { useWebSocket } from '@/composables/useWebSocket'
 import { useFileUpload } from '@/composables/useFileUpload'
 import { useToast } from 'vue-toastification'
-import { debounce } from 'lodash-es'
 import EmojiPicker from '@/components/common/EmojiPicker.vue'
 
-// Props
 const props = defineProps({
-    conversationId: {
-        type: String,
-        required: true
-    },
     placeholder: {
         type: String,
         default: 'Nhập tin nhắn...'
     },
+    replyToMessage: {
+        type: Object,
+        default: null
+    },
+    conversationId: {
+        type: String,
+        required: true
+    },
     disabled: {
         type: Boolean,
         default: false
-    },
-    maxLength: {
-        type: Number,
-        default: 4000
-    },
-    acceptedFileTypes: {
-        type: String,
-        default: 'image/*,video/*,.pdf,.doc,.docx,.txt'
     }
 })
 
-// Emits
-const emit = defineEmits([
-    'send-message',
-    'typing-start',
-    'typing-stop',
-    'focus',
-    'blur'
-])
+const emit = defineEmits(['send', 'typing', 'stop-typing', 'cancel-reply'])
 
-// Dependencies
-const messageStore = useMessageStore()
-const { emitTyping } = useWebSocket()
-const { uploadFile } = useFileUpload()
 const toast = useToast()
 
+// File upload
+const { addFiles, uploadFiles, uploadProgress, isUploading } = useFileUpload({
+    maxFileSize: 50 * 1024 * 1024, // 50MB
+    allowedTypes: [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/webm',
+        'audio/mp3', 'audio/wav', 'audio/ogg',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ],
+    multiple: true,
+    autoUpload: false
+})
+
 // Refs
-const textInput = ref(null)
+const textareaRef = ref(null)
 const fileInput = ref(null)
 
 // State
-const messageText = ref('')
+const message = ref('')
 const attachments = ref([])
-const showEmojiPicker = ref(false)
-const isTyping = ref(false)
 const isSending = ref(false)
-const isUploading = ref(false)
-const uploadProgress = ref(0)
+const showEmojiPicker = ref(false)
+const isRecording = ref(false)
+const recordingDuration = ref('00:00')
+const mediaRecorder = ref(null)
+const recordingStream = ref(null)
+const typingTimer = ref(null)
+const isTyping = ref(false)
 
 // Computed
-const replyingTo = computed(() => messageStore.replyingToMessage)
-const editingMessage = computed(() => messageStore.editingMessage)
-
 const canSend = computed(() => {
-    return (messageText.value.trim().length > 0 || attachments.value.length > 0) &&
-        messageText.value.length <= props.maxLength
+    return (message.value.trim() || attachments.value.length > 0) && !props.disabled
 })
 
-const characterCount = computed(() => messageText.value.length)
-const isNearLimit = computed(() => characterCount.value > props.maxLength * 0.8)
-const isOverLimit = computed(() => characterCount.value > props.maxLength)
-
-// Watch for editing message
-watch(editingMessage, (newMessage) => {
-    if (newMessage) {
-        messageText.value = newMessage.content
-        nextTick(() => {
-            textInput.value?.focus()
-            textInput.value?.setSelectionRange(messageText.value.length, messageText.value.length)
-        })
-    }
+const supportsVoiceRecording = computed(() => {
+    return navigator.mediaDevices && navigator.mediaDevices.getUserMedia
 })
 
-// Typing indicator
-const handleTypingStart = debounce(() => {
-    if (!isTyping.value && messageText.value.trim()) {
-        isTyping.value = true
-        emitTyping(props.conversationId, true)
-        emit('typing-start')
-    }
-}, 100)
-
-const handleTypingStop = debounce(() => {
-    if (isTyping.value) {
-        isTyping.value = false
-        emitTyping(props.conversationId, false)
-        emit('typing-stop')
-    }
-}, 1000)
-
-// Event handlers
-const handleKeyDown = (event) => {
-    if (event.key === 'Enter') {
-        if (event.ctrlKey || event.metaKey) {
-            event.preventDefault()
-            sendMessage()
-        } else if (!event.shiftKey) {
-            event.preventDefault()
-            sendMessage()
-        }
-    }
-
-    if (event.key === 'Escape') {
-        if (editingMessage.value) {
-            clearEdit()
-        } else if (replyingTo.value) {
-            clearReply()
-        }
-    }
+// Actions
+const handleInput = () => {
+    autoResize()
+    handleTyping()
 }
 
-const handleInput = () => {
-    // Auto-resize textarea
-    nextTick(() => {
-        if (textInput.value) {
-            textInput.value.style.height = 'auto'
-            textInput.value.style.height = Math.min(textInput.value.scrollHeight, 120) + 'px'
+const handleKeydown = (event) => {
+    // Send message with Ctrl/Cmd + Enter
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault()
+        if (canSend.value) {
+            handleSend()
         }
-    })
-
-    // Handle typing indicators
-    if (messageText.value.trim()) {
-        handleTypingStart()
+        return
     }
-    handleTypingStop()
+
+    // New line with Shift + Enter
+    if (event.shiftKey && event.key === 'Enter') {
+        return
+    }
+
+    // Send with Enter (without modifiers)
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault()
+        if (canSend.value) {
+            handleSend()
+        }
+    }
 }
 
 const handlePaste = async (event) => {
-    const items = event.clipboardData?.items
-    if (!items) return
+    const items = event.clipboardData.items
+    const files = []
 
-    for (const item of items) {
-        if (item.type.startsWith('image/')) {
-            event.preventDefault()
+    for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
             const file = item.getAsFile()
             if (file) {
-                await uploadAndAttachFile(file)
+                files.push(file)
             }
         }
+    }
+
+    if (files.length > 0) {
+        event.preventDefault()
+        await handleFiles(files)
     }
 }
 
 const handleFocus = () => {
-    emit('focus')
+    // Focus logic
 }
 
 const handleBlur = () => {
-    emit('blur')
-    // Stop typing when input loses focus
+    stopTyping()
+}
+
+const autoResize = () => {
+    nextTick(() => {
+        const textarea = textareaRef.value
+        if (textarea) {
+            textarea.style.height = 'auto'
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+        }
+    })
+}
+
+const handleTyping = () => {
+    if (!isTyping.value) {
+        isTyping.value = true
+        emit('typing')
+    }
+
+    // Clear existing timer
+    if (typingTimer.value) {
+        clearTimeout(typingTimer.value)
+    }
+
+    // Set new timer to stop typing
+    typingTimer.value = setTimeout(() => {
+        stopTyping()
+    }, 1000)
+}
+
+const stopTyping = () => {
     if (isTyping.value) {
-        handleTypingStop.flush()
+        isTyping.value = false
+        emit('stop-typing')
+    }
+
+    if (typingTimer.value) {
+        clearTimeout(typingTimer.value)
+        typingTimer.value = null
     }
 }
 
-const handleFileSelect = async (event) => {
-    const files = Array.from(event.target.files)
-    if (files.length === 0) return
-
-    for (const file of files) {
-        await uploadAndAttachFile(file)
-    }
-
-    // Clear file input
-    event.target.value = ''
-}
-
-// Message actions
-const sendMessage = async () => {
+const handleSend = async () => {
     if (!canSend.value || isSending.value) return
 
-    const content = messageText.value.trim()
-    if (!content && attachments.value.length === 0) return
-
     isSending.value = true
+    stopTyping()
 
     try {
+        // Upload attachments first
+        let uploadedAttachments = []
+        if (attachments.value.length > 0) {
+            const uploadResults = await uploadFiles()
+            uploadedAttachments = uploadResults.map(result => ({
+                url: result.url,
+                type: result.type,
+                name: result.name,
+                size: result.size
+            }))
+        }
+
         const messageData = {
-            content,
-            type: 'text',
-            attachments: attachments.value,
-            replyTo: replyingTo.value
+            content: message.value.trim(),
+            attachments: uploadedAttachments,
+            replyToId: props.replyToMessage?.id
         }
 
-        if (editingMessage.value) {
-            // Edit existing message
-            await messageStore.editMessage(editingMessage.value.id, content)
-            clearEdit()
-        } else {
-            // Send new message
-            const result = await messageStore.sendMessage(props.conversationId, messageData)
+        emit('send', messageData)
 
-            if (result.success) {
-                emit('send-message', result.data)
-            }
-        }
-
-        // Reset input
-        resetInput()
+        // Reset form
+        message.value = ''
+        attachments.value = []
+        autoResize()
 
     } catch (error) {
-        console.error('Failed to send message:', error)
-        toast.error('Không thể gửi tin nhắn')
+        toast.error('Không thể gửi tin nhắn!')
+        console.error('Send message error:', error)
     } finally {
         isSending.value = false
     }
 }
 
-const resetInput = () => {
-    messageText.value = ''
-    attachments.value = []
-    clearReply()
-
-    // Reset textarea height
-    nextTick(() => {
-        if (textInput.value) {
-            textInput.value.style.height = 'auto'
-        }
-    })
-
-    // Stop typing indicator
-    if (isTyping.value) {
-        handleTypingStop.flush()
-    }
-}
-
-// Reply/Edit actions
-const clearReply = () => {
-    messageStore.clearReplyingToMessage()
-}
-
-const clearEdit = () => {
-    messageStore.clearEditingMessage()
-    messageText.value = ''
-}
-
-// File handling
-const triggerFileInput = () => {
+const openFileDialog = () => {
     fileInput.value?.click()
 }
 
-const uploadAndAttachFile = async (file) => {
-    if (!file) return
-
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
-        toast.error('File quá lớn. Giới hạn 10MB.')
-        return
+const handleFileSelect = async (event) => {
+    const files = Array.from(event.target.files)
+    if (files.length > 0) {
+        await handleFiles(files)
     }
+    event.target.value = ''
+}
 
-    isUploading.value = true
-    uploadProgress.value = 0
-
+const handleFiles = async (files) => {
     try {
-        const result = await uploadFile(file, (progress) => {
-            uploadProgress.value = progress
-        })
+        const fileObjects = await addFiles(files)
 
-        if (result.success) {
-            attachments.value.push({
-                id: result.data.id,
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                url: result.data.url,
-                thumbnailUrl: result.data.thumbnailUrl
-            })
-
-            toast.success('Đã đính kèm file thành công!')
+        for (const fileObj of fileObjects) {
+            if (fileObj.file.type.startsWith('image/')) {
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                    attachments.value.push({
+                        id: fileObj.id,
+                        type: 'image',
+                        name: fileObj.file.name,
+                        preview: e.target.result,
+                        file: fileObj.file,
+                        progress: 0
+                    })
+                }
+                reader.readAsDataURL(fileObj.file)
+            } else {
+                attachments.value.push({
+                    id: fileObj.id,
+                    type: 'file',
+                    name: fileObj.file.name,
+                    file: fileObj.file,
+                    progress: 0
+                })
+            }
         }
     } catch (error) {
-        console.error('File upload failed:', error)
-        toast.error('Không thể tải file lên')
-    } finally {
-        isUploading.value = false
-        uploadProgress.value = 0
+        console.error('File handling error:', error)
     }
 }
 
@@ -390,292 +340,320 @@ const removeAttachment = (index) => {
     attachments.value.splice(index, 1)
 }
 
-// Emoji handling
 const toggleEmojiPicker = () => {
     showEmojiPicker.value = !showEmojiPicker.value
 }
 
-const closeEmojiPicker = () => {
-    showEmojiPicker.value = false
-}
+const addEmoji = (emoji) => {
+    const textarea = textareaRef.value
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
 
-const insertEmoji = (emoji) => {
-    const cursorPosition = textInput.value?.selectionStart || messageText.value.length
-    const beforeCursor = messageText.value.substring(0, cursorPosition)
-    const afterCursor = messageText.value.substring(cursorPosition)
-
-    messageText.value = beforeCursor + emoji + afterCursor
+    message.value = message.value.substring(0, start) + emoji.emoji + message.value.substring(end)
 
     nextTick(() => {
-        const newPosition = cursorPosition + emoji.length
-        textInput.value?.setSelectionRange(newPosition, newPosition)
-        textInput.value?.focus()
+        textarea.focus()
+        textarea.setSelectionRange(start + emoji.emoji.length, start + emoji.emoji.length)
+        autoResize()
     })
-
-    closeEmojiPicker()
 }
 
-// Utility functions
-const isImage = (file) => {
-    return file.type?.startsWith('image/') || file.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+const toggleVoiceRecording = async () => {
+    if (isRecording.value) {
+        stopRecording()
+    } else {
+        await startRecording()
+    }
 }
 
-const getFilePreview = (file) => {
-    if (file.url) return file.thumbnailUrl || file.url
-    if (file instanceof File) return URL.createObjectURL(file)
-    return ''
+const startRecording = async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        recordingStream.value = stream
+
+        mediaRecorder.value = new MediaRecorder(stream)
+        const chunks = []
+
+        mediaRecorder.value.ondataavailable = (event) => {
+            chunks.push(event.data)
+        }
+
+        mediaRecorder.value.onstop = () => {
+            const blob = new Blob(chunks, { type: 'audio/wav' })
+            const file = new File([blob], `voice-${Date.now()}.wav`, { type: 'audio/wav' })
+
+            // Add voice recording as attachment
+            attachments.value.push({
+                id: Date.now(),
+                type: 'audio',
+                name: file.name,
+                file: file,
+                progress: 100
+            })
+        }
+
+        mediaRecorder.value.start()
+        isRecording.value = true
+
+        // Start timer
+        let seconds = 0
+        const timer = setInterval(() => {
+            seconds++
+            const mins = Math.floor(seconds / 60)
+            const secs = seconds % 60
+            recordingDuration.value = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+        }, 1000)
+
+        // Store timer reference
+        mediaRecorder.value.timer = timer
+
+    } catch (error) {
+        toast.error('Không thể truy cập microphone!')
+        console.error('Recording error:', error)
+    }
 }
 
-const getFileIcon = (file) => {
-    const type = file.type || ''
-    if (type.startsWith('video/')) return 'fas fa-video'
-    if (type.startsWith('audio/')) return 'fas fa-music'
-    if (type.includes('pdf')) return 'fas fa-file-pdf'
-    if (type.includes('word') || type.includes('document')) return 'fas fa-file-word'
-    if (type.includes('excel') || type.includes('spreadsheet')) return 'fas fa-file-excel'
-    return 'fas fa-file'
+const stopRecording = () => {
+    if (mediaRecorder.value && isRecording.value) {
+        mediaRecorder.value.stop()
+        clearInterval(mediaRecorder.value.timer)
+
+        recordingStream.value?.getTracks().forEach(track => track.stop())
+
+        isRecording.value = false
+        recordingDuration.value = '00:00'
+    }
+}
+
+const cancelRecording = () => {
+    if (mediaRecorder.value && isRecording.value) {
+        clearInterval(mediaRecorder.value.timer)
+        recordingStream.value?.getTracks().forEach(track => track.stop())
+
+        isRecording.value = false
+        recordingDuration.value = '00:00'
+    }
+}
+
+const cancelReply = () => {
+    emit('cancel-reply')
 }
 
 const truncateText = (text, maxLength) => {
-    if (text.length <= maxLength) return text
+    if (!text || text.length <= maxLength) return text
     return text.substring(0, maxLength) + '...'
 }
 
-// Lifecycle
-onMounted(() => {
-    // Focus input when component mounts
-    nextTick(() => {
-        textInput.value?.focus()
-    })
-})
-
+// Cleanup
 onUnmounted(() => {
-    // Clean up typing indicator
-    if (isTyping.value) {
-        handleTypingStop.flush()
-    }
+    stopTyping()
+    cancelRecording()
 })
 
-// Expose methods for parent components
-defineExpose({
-    focus: () => textInput.value?.focus(),
-    clear: resetInput,
-    setText: (text) => { messageText.value = text }
+// Initialize
+onMounted(() => {
+    autoResize()
+    textareaRef.value?.focus()
 })
 </script>
 
 <style lang="scss" scoped>
-.message-input-container {
-    border-top: 1px solid var(--bs-border-color);
-    background: var(--bs-body-bg);
-}
-
-.reply-preview,
-.edit-preview {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--bs-border-color);
-    background: var(--bs-gray-50);
-
-    .reply-content,
-    .edit-content {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .reply-user,
-    .edit-label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--bs-primary);
-        margin-bottom: 4px;
-    }
-
-    .reply-message {
-        font-size: 0.875rem;
-        color: var(--bs-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .reply-close,
-    .edit-close {
-        margin-left: 12px;
-    }
-}
-
-.attachments-preview {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--bs-border-color);
-    background: var(--bs-gray-50);
-
-    .attachments-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .attachment-item {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: white;
-        border: 1px solid var(--bs-border-color);
-        border-radius: 8px;
-    }
-
-    .attachment-preview {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .attachment-image {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-        border-radius: 4px;
-    }
-
-    .attachment-file {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        .file-icon {
-            font-size: 1.25rem;
-            color: var(--bs-secondary);
-        }
-
-        .file-name {
-            font-size: 0.875rem;
-            max-width: 150px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-    }
-
-    .attachment-remove {
-        padding: 4px 8px;
-    }
-}
-
-.input-wrapper {
-    display: flex;
-    align-items: flex-end;
-    padding: 12px 16px;
-    gap: 12px;
-}
-
-.input-controls {
-    display: flex;
-    align-items: center;
-}
-
-.input-field-wrapper {
-    flex: 1;
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-}
-
 .message-input {
-    border: 1px solid var(--bs-border-color);
-    border-radius: 20px;
-    padding: 8px 16px;
-    resize: none;
-    min-height: 38px;
-    max-height: 120px;
-    font-size: 0.875rem;
+    border-top: 1px solid var(--bs-border-color);
+    background: white;
 
-    &:focus {
-        border-color: var(--bs-primary);
-        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+    .input-container {
+        padding: 1rem;
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+
+            .attachment-btn {
+                flex-shrink: 0;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .text-input-container {
+                flex: 1;
+                position: relative;
+
+                .message-textarea {
+                    border-radius: 1.5rem;
+                    padding: 0.75rem 3rem 0.75rem 1rem;
+                    resize: none;
+                    border: 1px solid var(--bs-border-color);
+
+                    &:focus {
+                        border-color: var(--bs-primary);
+                        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+                    }
+                }
+
+                .input-actions {
+                    position: absolute;
+                    right: 0.5rem;
+                    bottom: 0.5rem;
+                    display: flex;
+                    gap: 0.25rem;
+                }
+            }
+
+            .send-btn {
+                flex-shrink: 0;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        .reply-preview {
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bs-light);
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--bs-primary);
+
+            .reply-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.25rem;
+
+                span {
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    color: var(--bs-primary);
+                }
+            }
+
+            .reply-text {
+                font-size: 0.875rem;
+                color: var(--bs-secondary);
+            }
+        }
+
+        .attachments-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+
+            .attachment-item {
+                position: relative;
+                border-radius: 0.5rem;
+                overflow: hidden;
+                background: var(--bs-light);
+
+                .attachment-preview {
+                    width: 100%;
+                    height: 100px;
+                    object-fit: cover;
+                }
+
+                .attachment-file {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100px;
+                    padding: 0.5rem;
+                    text-align: center;
+
+                    i {
+                        font-size: 1.5rem;
+                        color: var(--bs-secondary);
+                        margin-bottom: 0.25rem;
+                    }
+
+                    span {
+                        font-size: 0.75rem;
+                        word-break: break-word;
+                    }
+                }
+
+                .attachment-remove {
+                    position: absolute;
+                    top: 0.25rem;
+                    right: 0.25rem;
+                    width: 24px;
+                    height: 24px;
+                    padding: 0;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .upload-progress {
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+
+                    .progress {
+                        height: 4px;
+                        border-radius: 0;
+                    }
+                }
+            }
+        }
+
+        .recording-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--bs-danger);
+            color: white;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+
+            .recording-animation {
+                position: relative;
+                width: 16px;
+                height: 16px;
+
+                .pulse {
+                    width: 100%;
+                    height: 100%;
+                    background: white;
+                    border-radius: 50%;
+                    animation: pulse 1s infinite;
+                }
+            }
+
+            span {
+                font-weight: 600;
+                font-family: monospace;
+            }
+        }
     }
 }
 
-.send-button {
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-
-    &:disabled {
-        opacity: 0.5;
-    }
-}
-
-.emoji-picker-wrapper {
-    position: absolute;
-    bottom: 100%;
-    right: 16px;
-    z-index: 1000;
-    margin-bottom: 8px;
-}
-
-.upload-progress {
-    padding: 8px 16px;
-    background: var(--bs-gray-50);
-    border-bottom: 1px solid var(--bs-border-color);
-}
-
-// Character count indicator
-.character-count {
-    position: absolute;
-    bottom: -20px;
-    right: 16px;
-    font-size: 0.75rem;
-    color: var(--bs-secondary);
-
-    &.near-limit {
-        color: var(--bs-warning);
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
     }
 
-    &.over-limit {
-        color: var(--bs-danger);
-    }
-}
-
-// Dark theme
-[data-bs-theme="dark"] {
-
-    .reply-preview,
-    .edit-preview,
-    .attachments-preview {
-        background: var(--bs-gray-800);
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
     }
 
-    .attachment-item {
-        background: var(--bs-gray-900);
-    }
-
-    .upload-progress {
-        background: var(--bs-gray-800);
-    }
-}
-
-// Mobile responsive
-@media (max-width: 576px) {
-    .input-wrapper {
-        padding: 8px 12px;
-        gap: 8px;
-    }
-
-    .input-controls {
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .emoji-picker-wrapper {
-        right: 12px;
+    100% {
+        transform: scale(1);
+        opacity: 1;
     }
 }
 </style>

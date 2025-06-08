@@ -1,78 +1,51 @@
 <template>
-    <div class="post-card" :class="{ 'shared-post': post.isShared }">
-        <!-- Shared Post Header -->
-        <div v-if="post.isShared" class="shared-header">
-            <i class="fas fa-share text-muted me-2"></i>
-            <span class="text-muted">
-                <router-link :to="`/app/profile/${post.sharedBy.id}`" class="text-decoration-none">
-                    {{ post.sharedBy.firstName }} {{ post.sharedBy.lastName }}
-                </router-link>
-                đã chia sẻ
-            </span>
-            <span class="text-muted ms-2">{{ formatTime(post.sharedAt) }}</span>
-        </div>
-
-        <!-- Post Header -->
+    <article class="post-card">
         <div class="post-header">
-            <div class="author-info">
-                <router-link :to="`/app/profile/${post.author.id}`" class="author-avatar">
-                    <img :src="post.author.avatar || '/default-avatar.png'"
-                        :alt="post.author.firstName + ' ' + post.author.lastName" @error="handleAvatarError" />
-                    <div v-if="isAuthorOnline" class="online-indicator" title="Đang online"></div>
-                </router-link>
+            <UserAvatar :src="post.author.avatar" :name="post.author.name" :show-online-status="true"
+                :is-online="post.author.isOnline" size="medium" clickable @click="viewProfile" />
 
-                <div class="author-details">
-                    <div class="author-name">
-                        <router-link :to="`/app/profile/${post.author.id}`" class="text-decoration-none">
-                            {{ post.author.firstName }} {{ post.author.lastName }}
-                        </router-link>
-                        <i v-if="post.author.isVerified" class="fas fa-check-circle text-primary ms-1"
-                            title="Đã xác minh"></i>
-                    </div>
-                    <div class="post-meta">
-                        <router-link :to="`/app/post/${post.id}`" class="post-time text-muted text-decoration-none">
-                            {{ formatTime(post.createdAt) }}
-                        </router-link>
-                        <span v-if="post.isEdited" class="text-muted ms-1">(đã chỉnh sửa)</span>
-                        <i v-if="post.visibility === 'private'" class="fas fa-lock text-muted ms-2"
-                            title="Riêng tư"></i>
-                        <i v-else-if="post.visibility === 'friends'" class="fas fa-user-friends text-muted ms-2"
-                            title="Bạn bè"></i>
-                    </div>
+            <div class="post-meta">
+                <div class="author-info">
+                    <h6 class="author-name" @click="viewProfile">{{ post.author.name }}</h6>
+                    <span class="author-username">@{{ post.author.username }}</span>
+                </div>
+
+                <div class="post-time">
+                    <time :datetime="post.createdAt" :title="formatFullDate(post.createdAt)">
+                        {{ formatRelativeTime(post.createdAt) }}
+                    </time>
+                    <span v-if="post.isEdited" class="edited-indicator" title="Đã chỉnh sửa">
+                        <i class="fas fa-edit"></i>
+                    </span>
                 </div>
             </div>
 
-            <div class="post-actions">
+            <div class="post-actions-menu">
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-ghost" type="button" data-bs-toggle="dropdown" @click.stop>
+                    <button class="btn btn-link btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li v-if="canEdit">
-                            <a class="dropdown-item" href="#" @click="handleEdit">
+                            <a class="dropdown-item" href="#" @click="editPost">
                                 <i class="fas fa-edit me-2"></i>Chỉnh sửa
                             </a>
                         </li>
                         <li v-if="canDelete">
-                            <a class="dropdown-item text-danger" href="#" @click="handleDelete">
+                            <a class="dropdown-item text-danger" href="#" @click="deletePost">
                                 <i class="fas fa-trash me-2"></i>Xóa
                             </a>
                         </li>
                         <li v-if="!isOwnPost">
-                            <a class="dropdown-item" href="#" @click="handleReport">
+                            <a class="dropdown-item" href="#" @click="reportPost">
                                 <i class="fas fa-flag me-2"></i>Báo cáo
-                            </a>
-                        </li>
-                        <li v-if="!isOwnPost">
-                            <a class="dropdown-item" href="#" @click="handleHide">
-                                <i class="fas fa-eye-slash me-2"></i>Ẩn bài viết
                             </a>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <a class="dropdown-item" href="#" @click="copyPostLink">
+                            <a class="dropdown-item" href="#" @click="copyLink">
                                 <i class="fas fa-link me-2"></i>Sao chép liên kết
                             </a>
                         </li>
@@ -81,789 +54,360 @@
             </div>
         </div>
 
-        <!-- Post Content -->
         <div class="post-content">
-            <!-- Text Content -->
-            <div v-if="post.content" class="post-text">
-                <PostContent :content="post.content" :expanded="isExpanded" />
-                <button v-if="post.content.length > 300 && !isExpanded" class="btn btn-link btn-sm p-0 mt-1"
-                    @click="toggleExpanded">
-                    Xem thêm
-                </button>
-                <button v-if="post.content.length > 300 && isExpanded" class="btn btn-link btn-sm p-0 mt-1"
-                    @click="toggleExpanded">
-                    Thu gọn
-                </button>
-            </div>
+            <div v-if="post.content" class="post-text" v-html="formattedContent"></div>
 
-            <!-- Media Attachments -->
-            <div v-if="hasMedia" class="post-media">
-                <PostMedia :attachments="post.attachments" :post-id="post.id" @media-click="handleMediaClick" />
-            </div>
+            <PostMedia v-if="post.attachments && post.attachments.length > 0" :attachments="post.attachments"
+                @view="viewMedia" />
 
-            <!-- Shared Post Content (if this is a shared post) -->
-            <div v-if="post.originalPost" class="shared-post-content">
-                <PostCard :post="post.originalPost" :is-nested="true" @like="$emit('like', $event)"
-                    @comment="$emit('comment', $event)" @share="$emit('share', $event)" />
-            </div>
-
-            <!-- Poll (if post has poll) -->
-            <div v-if="post.poll" class="post-poll">
-                <PostPoll :poll="post.poll" :post-id="post.id" @vote="handlePollVote" />
-            </div>
-
-            <!-- Location -->
-            <div v-if="post.location" class="post-location">
-                <i class="fas fa-map-marker-alt text-muted me-1"></i>
-                <span class="text-muted">{{ post.location.name }}</span>
-            </div>
+            <PostHashtags v-if="hashtags.length > 0" :hashtags="hashtags" @click="searchHashtag" />
         </div>
 
-        <!-- Post Stats -->
-        <div v-if="!isNested" class="post-stats">
-            <div class="stats-row">
-                <div v-if="post.likesCount > 0" class="stat-item likes-stat" @click="showLikesList">
-                    <div class="reactions-preview">
-                        <i class="fas fa-heart text-danger"></i>
-                        <i v-if="hasMultipleReactions" class="fas fa-thumbs-up text-primary"></i>
-                    </div>
-                    <span class="stat-count">{{ formatCount(post.likesCount) }}</span>
-                </div>
+        <PostActions :post="post" @like="handleLike" @comment="handleComment" @share="handleShare" @save="handleSave" />
 
-                <div class="stats-right">
-                    <div v-if="post.commentsCount > 0" class="stat-item comments-stat" @click="focusCommentInput">
-                        {{ formatCount(post.commentsCount) }} bình luận
-                    </div>
-                    <div v-if="post.sharesCount > 0" class="stat-item shares-stat">
-                        {{ formatCount(post.sharesCount) }} chia sẻ
+        <!-- Comments preview -->
+        <div v-if="showCommentsPreview && post.commentsCount > 0" class="comments-preview">
+            <button class="btn btn-link btn-sm p-0" @click="viewComments">
+                Xem tất cả {{ post.commentsCount }} bình luận
+            </button>
+
+            <div v-if="post.latestComments" class="latest-comments">
+                <div v-for="comment in post.latestComments.slice(0, 2)" :key="comment.id" class="comment-preview">
+                    <UserAvatar :src="comment.author.avatar" :name="comment.author.name" size="sm" />
+                    <div class="comment-content">
+                        <span class="comment-author">{{ comment.author.name }}</span>
+                        <span class="comment-text">{{ comment.content }}</span>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Post Actions -->
-        <div v-if="!isNested" class="post-interactions">
-            <div class="interaction-buttons">
-                <button class="interaction-btn" :class="{ 'liked': post.isLiked }" @click="handleLike"
-                    :disabled="isLiking">
-                    <i class="fas fa-heart"></i>
-                    <span>{{ post.isLiked ? 'Đã thích' : 'Thích' }}</span>
-                </button>
-
-                <button class="interaction-btn" @click="toggleComments">
-                    <i class="fas fa-comment"></i>
-                    <span>Bình luận</span>
-                </button>
-
-                <button class="interaction-btn" @click="handleShare">
-                    <i class="fas fa-share"></i>
-                    <span>Chia sẻ</span>
-                </button>
-
-                <button class="interaction-btn" @click="handleSave" :class="{ 'saved': post.isSaved }">
-                    <i :class="post.isSaved ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
-                    <span>{{ post.isSaved ? 'Đã lưu' : 'Lưu' }}</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Comments Section -->
-        <div v-if="showComments && !isNested" class="comments-section">
-            <!-- Comment Input -->
-            <div class="comment-input-wrapper">
-                <div class="comment-input">
-                    <img :src="currentUser?.avatar || '/default-avatar.png'" alt="Your avatar" class="comment-avatar" />
-                    <div class="comment-form">
-                        <textarea ref="commentInput" v-model="newComment" class="form-control"
-                            placeholder="Viết bình luận..." rows="1" @keydown="handleCommentKeydown"
-                            @input="autoResizeTextarea"></textarea>
-                        <div class="comment-actions">
-                            <button class="btn btn-primary btn-sm" @click="submitComment"
-                                :disabled="!newComment.trim() || isCommenting">
-                                <span v-if="isCommenting" class="spinner-border spinner-border-sm me-1"></span>
-                                Gửi
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Comments List -->
-            <div v-if="comments.length > 0" class="comments-list">
-                <CommentList :comments="comments" :post-id="post.id" @reply="handleCommentReply"
-                    @like="handleCommentLike" @delete="handleCommentDelete" />
-
-                <!-- Load More Comments -->
-                <div v-if="hasMoreComments" class="load-more-comments">
-                    <button class="btn btn-outline-secondary btn-sm" @click="loadMoreComments"
-                        :disabled="isLoadingComments">
-                        <span v-if="isLoadingComments" class="spinner-border spinner-border-sm me-1"></span>
-                        Xem thêm bình luận
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modals -->
-        <MediaModal v-if="showMediaModal" :media="selectedMedia" :attachments="post.attachments"
-            @close="closeMediaModal" @previous="previousMedia" @next="nextMedia" />
-
-        <ShareModal v-if="showShareModal" :post="post" @close="closeShareModal" @shared="handleShared" />
-
-        <LikesModal v-if="showLikesModal" :post-id="post.id" @close="closeLikesModal" />
-    </div>
+    </article>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
-import { usePostStore } from '@/stores/post'
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { usePresenceStore } from '@/stores/presence'
+import { usePostStore } from '@/stores/post'
 import { useToast } from 'vue-toastification'
-import { formatDistanceToNow } from 'date-fns'
-import { vi } from 'date-fns/locale'
-import PostContent from '@/components/post/PostContent.vue'
-import PostMedia from '@/components/post/PostMedia.vue'
-import PostPoll from '@/components/post/PostPoll.vue'
-import CommentList from '@/components/comment/CommentList.vue'
-import MediaModal from '@/components/common/MediaModal.vue'
-import ShareModal from '@/components/post/ShareModal.vue'
-import LikesModal from '@/components/post/LikesModal.vue'
+import UserAvatar from '@/components/user/UserAvatar.vue'
+import PostMedia from './PostMedia.vue'
+import PostHashtags from './PostHashtags.vue'
+import PostActions from './PostActions.vue'
 
-// Props
 const props = defineProps({
     post: {
         type: Object,
         required: true
     },
-    isNested: {
+    showCommentsPreview: {
         type: Boolean,
-        default: false
-    },
-    showComments: {
-        type: Boolean,
-        default: false
+        default: true
     }
 })
 
-// Emits
-const emit = defineEmits([
-    'like',
-    'comment',
-    'share',
-    'edit',
-    'delete',
-    'report',
-    'hide'
-])
+const emit = defineEmits(['edit', 'delete', 'like', 'comment', 'share', 'save', 'report'])
 
-// Dependencies
-const postStore = usePostStore()
+const router = useRouter()
 const authStore = useAuthStore()
-const presenceStore = usePresenceStore()
+const postStore = usePostStore()
 const toast = useToast()
 
-// Refs
-const commentInput = ref(null)
-
-// State
-const isExpanded = ref(false)
-const showComments = ref(props.showComments)
-const newComment = ref('')
-const comments = ref([])
-const isLiking = ref(false)
-const isCommenting = ref(false)
-const isLoadingComments = ref(false)
-const hasMoreComments = ref(false)
-const selectedMedia = ref(null)
-const showMediaModal = ref(false)
-const showShareModal = ref(false)
-const showLikesModal = ref(false)
-
 // Computed
-const currentUser = computed(() => authStore.userProfile)
-const isOwnPost = computed(() => props.post.author.id === authStore.userId)
-const canEdit = computed(() => isOwnPost.value && !props.post.isShared)
-const canDelete = computed(() => isOwnPost.value)
-const hasMedia = computed(() => props.post.attachments && props.post.attachments.length > 0)
-const hasMultipleReactions = computed(() => {
-    // Check if post has multiple types of reactions
-    return props.post.reactions && Object.keys(props.post.reactions).length > 1
+const isOwnPost = computed(() => {
+    return authStore.userId === props.post.author.id
 })
 
-const isAuthorOnline = computed(() => {
-    return presenceStore.isUserOnline(props.post.author.id)
+const canEdit = computed(() => {
+    return isOwnPost.value
 })
 
-// Methods
-const toggleExpanded = () => {
-    isExpanded.value = !isExpanded.value
+const canDelete = computed(() => {
+    return isOwnPost.value || authStore.user?.role === 'admin'
+})
+
+const formattedContent = computed(() => {
+    if (!props.post.content) return ''
+
+    let content = props.post.content
+
+    // Format mentions
+    content = content.replace(
+        /@(\w+)/g,
+        '<a href="/app/profile/$1" class="mention">@$1</a>'
+    )
+
+    // Format hashtags
+    content = content.replace(
+        /#(\w+)/g,
+        '<a href="/app/search?q=%23$1" class="hashtag">#$1</a>'
+    )
+
+    // Format URLs
+    content = content.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="external-link">$1</a>'
+    )
+
+    return content
+})
+
+const hashtags = computed(() => {
+    if (!props.post.content) return []
+
+    const hashtagRegex = /#(\w+)/g
+    const matches = [...props.post.content.matchAll(hashtagRegex)]
+    return matches.map(match => match[1])
+})
+
+// Actions
+const viewProfile = () => {
+    router.push(`/app/profile/${props.post.author.id}`)
 }
 
-const toggleComments = () => {
-    showComments.value = !showComments.value
-    if (showComments.value && comments.value.length === 0) {
-        loadComments()
-    }
-    if (showComments.value) {
-        nextTick(() => {
-            commentInput.value?.focus()
-        })
-    }
-}
-
-const handleLike = async () => {
-    if (isLiking.value) return
-
-    isLiking.value = true
-    try {
-        if (props.post.isLiked) {
-            await postStore.unlikePost(props.post.id)
-        } else {
-            await postStore.likePost(props.post.id)
-        }
-        emit('like', props.post.id)
-    } catch (error) {
-        console.error('Failed to toggle like:', error)
-    } finally {
-        isLiking.value = false
-    }
-}
-
-const handleShare = () => {
-    showShareModal.value = true
-}
-
-const handleSave = async () => {
-    try {
-        // Implementation for save/unsave post
-        toast.success(props.post.isSaved ? 'Đã bỏ lưu bài viết' : 'Đã lưu bài viết')
-    } catch (error) {
-        toast.error('Không thể lưu bài viết')
-    }
-}
-
-const handleEdit = () => {
+const editPost = () => {
     emit('edit', props.post)
 }
 
-const handleDelete = () => {
+const deletePost = async () => {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-        emit('delete', props.post.id)
-    }
-}
-
-const handleReport = () => {
-    emit('report', props.post.id)
-}
-
-const handleHide = () => {
-    emit('hide', props.post.id)
-}
-
-const handleMediaClick = (media, index) => {
-    selectedMedia.value = { ...media, index }
-    showMediaModal.value = true
-}
-
-const closeMediaModal = () => {
-    showMediaModal.value = false
-    selectedMedia.value = null
-}
-
-const previousMedia = () => {
-    if (selectedMedia.value.index > 0) {
-        const newIndex = selectedMedia.value.index - 1
-        selectedMedia.value = {
-            ...props.post.attachments[newIndex],
-            index: newIndex
+        try {
+            await postStore.deletePost(props.post.id)
+            emit('delete', props.post)
+        } catch (error) {
+            console.error('Delete post error:', error)
         }
     }
 }
 
-const nextMedia = () => {
-    if (selectedMedia.value.index < props.post.attachments.length - 1) {
-        const newIndex = selectedMedia.value.index + 1
-        selectedMedia.value = {
-            ...props.post.attachments[newIndex],
-            index: newIndex
-        }
-    }
+const reportPost = () => {
+    emit('report', props.post)
 }
 
-const closeShareModal = () => {
-    showShareModal.value = false
-}
+const copyLink = async () => {
+    const url = `${window.location.origin}/app/post/${props.post.id}`
 
-const handleShared = () => {
-    showShareModal.value = false
-    emit('share', props.post.id)
-}
-
-const showLikesList = () => {
-    showLikesModal.value = true
-}
-
-const closeLikesModal = () => {
-    showLikesModal.value = false
-}
-
-// Comment handling
-const loadComments = async () => {
-    isLoadingComments.value = true
     try {
-        // Load comments from API
-        const result = await postStore.getPostComments(props.post.id)
-        if (result.success) {
-            comments.value = result.data
-        }
-    } catch (error) {
-        console.error('Failed to load comments:', error)
-    } finally {
-        isLoadingComments.value = false
-    }
-}
-
-const submitComment = async () => {
-    if (!newComment.value.trim() || isCommenting.value) return
-
-    isCommenting.value = true
-    try {
-        const result = await postStore.addComment(props.post.id, {
-            content: newComment.value.trim()
-        })
-
-        if (result.success) {
-            comments.value.push(result.data)
-            newComment.value = ''
-            emit('comment', props.post.id)
-
-            // Reset textarea height
-            nextTick(() => {
-                if (commentInput.value) {
-                    commentInput.value.style.height = 'auto'
-                }
-            })
-        }
-    } catch (error) {
-        console.error('Failed to submit comment:', error)
-    } finally {
-        isCommenting.value = false
-    }
-}
-
-const handleCommentKeydown = (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault()
-        submitComment()
-    }
-}
-
-const autoResizeTextarea = () => {
-    nextTick(() => {
-        if (commentInput.value) {
-            commentInput.value.style.height = 'auto'
-            commentInput.value.style.height = commentInput.value.scrollHeight + 'px'
-        }
-    })
-}
-
-const handleCommentReply = (comment) => {
-    newComment.value = `@${comment.author.username} `
-    nextTick(() => {
-        commentInput.value?.focus()
-    })
-}
-
-const handleCommentLike = (commentId) => {
-    // Handle comment like
-}
-
-const handleCommentDelete = (commentId) => {
-    comments.value = comments.value.filter(c => c.id !== commentId)
-}
-
-const loadMoreComments = async () => {
-    // Load more comments
-}
-
-const focusCommentInput = () => {
-    if (!showComments.value) {
-        toggleComments()
-    } else {
-        commentInput.value?.focus()
-    }
-}
-
-const handlePollVote = (pollData) => {
-    // Handle poll vote
-    emit('poll-vote', pollData)
-}
-
-// Utility functions
-const formatTime = (timestamp) => {
-    return formatDistanceToNow(new Date(timestamp), {
-        addSuffix: true,
-        locale: vi
-    })
-}
-
-const formatCount = (count) => {
-    if (count < 1000) return count.toString()
-    if (count < 1000000) return (count / 1000).toFixed(1) + 'K'
-    return (count / 1000000).toFixed(1) + 'M'
-}
-
-const copyPostLink = async () => {
-    try {
-        const url = `${window.location.origin}/app/post/${props.post.id}`
         await navigator.clipboard.writeText(url)
-        toast.success('Đã sao chép liên kết bài viết!')
+        toast.success('Đã sao chép liên kết!')
     } catch (error) {
         toast.error('Không thể sao chép liên kết')
     }
 }
 
-const handleAvatarError = (event) => {
-    event.target.src = '/default-avatar.png'
+const handleLike = () => {
+    emit('like', props.post)
 }
 
-// Lifecycle
-onMounted(() => {
-    if (props.showComments) {
-        loadComments()
+const handleComment = () => {
+    emit('comment', props.post)
+    router.push(`/app/post/${props.post.id}`)
+}
+
+const handleShare = () => {
+    emit('share', props.post)
+}
+
+const handleSave = () => {
+    emit('save', props.post)
+}
+
+const viewComments = () => {
+    router.push(`/app/post/${props.post.id}`)
+}
+
+const viewMedia = (attachment, index) => {
+    // Open media viewer modal
+    console.log('View media:', attachment, index)
+}
+
+const searchHashtag = (hashtag) => {
+    router.push(`/app/search?q=%23${hashtag}`)
+}
+
+// Utility functions
+const formatRelativeTime = (date) => {
+    const now = new Date()
+    const postDate = new Date(date)
+    const diffInSeconds = Math.floor((now - postDate) / 1000)
+
+    if (diffInSeconds < 60) {
+        return 'Vừa xong'
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60)
+        return `${minutes} phút trước`
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600)
+        return `${hours} giờ trước`
+    } else if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400)
+        return `${days} ngày trước`
+    } else {
+        return new Intl.DateTimeFormat('vi-VN', {
+            day: 'numeric',
+            month: 'short'
+        }).format(postDate)
     }
-})
+}
+
+const formatFullDate = (date) => {
+    return new Intl.DateTimeFormat('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(new Date(date))
+}
 </script>
 
 <style lang="scss" scoped>
 .post-card {
-    background: var(--bs-body-bg);
+    background: white;
     border: 1px solid var(--bs-border-color);
-    border-radius: 12px;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
     margin-bottom: 1rem;
-    transition: box-shadow 0.2s ease;
+    transition: all 0.2s ease;
 
     &:hover {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    &.shared-post {
-        .post-content {
-            .shared-post-content {
-                margin-top: 1rem;
-                padding: 1rem;
-                border: 1px solid var(--bs-border-color);
-                border-radius: 8px;
-                background: var(--bs-gray-50);
-            }
-        }
-    }
-}
-
-.shared-header {
-    padding: 0.75rem 1rem 0;
-    font-size: 0.875rem;
-}
-
-.post-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: 1rem 1rem 0;
-}
-
-.author-info {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-}
-
-.author-avatar {
-    position: relative;
-    text-decoration: none;
-
-    img {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .online-indicator {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 14px;
-        height: 14px;
-        background: #28a745;
-        border: 2px solid white;
-        border-radius: 50%;
-    }
-}
-
-.author-details {
-    .author-name {
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-
-        a {
-            color: var(--bs-dark);
-
-            &:hover {
-                text-decoration: underline !important;
-            }
-        }
-    }
-
-    .post-meta {
-        font-size: 0.875rem;
-        color: var(--bs-secondary);
-    }
-}
-
-.post-actions {
-    .btn-ghost {
-        background: none;
-        border: none;
-        color: var(--bs-secondary);
-        padding: 0.25rem 0.5rem;
-        border-radius: 50%;
-
-        &:hover {
-            background: var(--bs-gray-100);
-            color: var(--bs-dark);
-        }
-    }
-}
-
-.post-content {
-    padding: 0 1rem;
-}
-
-.post-text {
-    margin: 1rem 0;
-    line-height: 1.6;
-}
-
-.post-media {
-    margin: 1rem 0;
-}
-
-.post-location {
-    margin-top: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.post-stats {
-    padding: 0.75rem 1rem 0;
-    border-bottom: 1px solid var(--bs-border-color);
-
-    .stats-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .stat-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        font-size: 0.875rem;
-        color: var(--bs-secondary);
-
-        &:hover {
-            text-decoration: underline;
-        }
-    }
-
-    .stats-right {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .reactions-preview {
-        display: flex;
-        gap: 0.25rem;
-    }
-
-    .likes-stat {
-        .stat-count {
-            font-weight: 500;
-        }
-    }
-}
-
-.post-interactions {
-    padding: 0.5rem 1rem 1rem;
-
-    .interaction-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .interaction-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: none;
-        border: none;
-        border-radius: 6px;
-        color: var(--bs-secondary);
-        font-weight: 500;
-        transition: all 0.2s ease;
-
-        &:hover {
-            background: var(--bs-gray-100);
-            color: var(--bs-dark);
-        }
-
-        &.liked {
-            color: var(--bs-danger);
-
-            &:hover {
-                background: var(--bs-danger-bg-subtle);
-            }
-        }
-
-        &.saved {
-            color: var(--bs-warning);
-
-            &:hover {
-                background: var(--bs-warning-bg-subtle);
-            }
-        }
-
-        i {
-            font-size: 1.1rem;
-        }
-    }
-}
-
-.comments-section {
-    border-top: 1px solid var(--bs-border-color);
-    padding: 1rem;
-}
-
-.comment-input-wrapper {
-    margin-bottom: 1rem;
-}
-
-.comment-input {
-    display: flex;
-    gap: 0.75rem;
-
-    .comment-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-
-    .comment-form {
-        flex: 1;
-
-        textarea {
-            border: 1px solid var(--bs-border-color);
-            border-radius: 20px;
-            padding: 0.5rem 1rem;
-            resize: none;
-            min-height: 36px;
-            max-height: 120px;
-
-            &:focus {
-                border-color: var(--bs-primary);
-                box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
-            }
-        }
-
-        .comment-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 0.5rem;
-        }
-    }
-}
-
-.comments-list {
-    .load-more-comments {
-        text-align: center;
-        margin-top: 1rem;
-    }
-}
-
-// Dark theme
-[data-bs-theme="dark"] {
-    .post-card {
-        background: var(--bs-gray-900);
-        border-color: var(--bs-gray-700);
-
-        &.shared-post .post-content .shared-post-content {
-            background: var(--bs-gray-800);
-        }
-    }
-
-    .author-details .author-name a {
-        color: var(--bs-light);
-    }
-
-    .post-actions .btn-ghost:hover {
-        background: var(--bs-gray-700);
-        color: var(--bs-light);
-    }
-
-    .interaction-btn:hover {
-        background: var(--bs-gray-700);
-        color: var(--bs-light);
-    }
-}
-
-// Mobile responsive
-@media (max-width: 768px) {
-    .post-card {
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        margin-bottom: 0.5rem;
+        border-color: var(--bs-primary);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     }
 
     .post-header {
-        padding: 0.75rem;
-    }
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
 
-    .author-avatar img {
-        width: 40px;
-        height: 40px;
-    }
+        .post-meta {
+            flex: 1;
+            min-width: 0;
 
-    .post-content {
-        padding: 0 0.75rem;
-    }
+            .author-info {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 0.25rem;
 
-    .post-stats {
-        padding: 0.5rem 0.75rem 0;
-    }
+                .author-name {
+                    margin: 0;
+                    font-weight: 600;
+                    cursor: pointer;
 
-    .post-interactions {
-        padding: 0.5rem 0.75rem 0.75rem;
+                    &:hover {
+                        color: var(--bs-primary);
+                    }
+                }
 
-        .interaction-btn {
-            padding: 0.5rem;
-            font-size: 0.875rem;
+                .author-username {
+                    color: var(--bs-secondary);
+                    font-size: 0.875rem;
+                }
+            }
 
-            span {
-                display: none;
+            .post-time {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+
+                time {
+                    color: var(--bs-secondary);
+                    font-size: 0.875rem;
+                    cursor: pointer;
+
+                    &:hover {
+                        text-decoration: underline;
+                    }
+                }
+
+                .edited-indicator {
+                    color: var(--bs-secondary);
+                    font-size: 0.75rem;
+                }
+            }
+        }
+
+        .post-actions-menu {
+            .btn-link {
+                color: var(--bs-secondary);
+
+                &:hover {
+                    color: var(--bs-body-color);
+                }
             }
         }
     }
 
-    .comments-section {
-        padding: 0.75rem;
+    .post-content {
+        margin-bottom: 1rem;
+
+        .post-text {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+
+            :deep(.mention) {
+                color: var(--bs-primary);
+                text-decoration: none;
+                font-weight: 500;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+
+            :deep(.hashtag) {
+                color: var(--bs-info);
+                text-decoration: none;
+                font-weight: 500;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+
+            :deep(.external-link) {
+                color: var(--bs-primary);
+                text-decoration: none;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+
+    .comments-preview {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--bs-border-color);
+
+        .latest-comments {
+            margin-top: 0.75rem;
+
+            .comment-preview {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+
+                .comment-content {
+                    flex: 1;
+                    min-width: 0;
+
+                    .comment-author {
+                        font-weight: 600;
+                        margin-right: 0.5rem;
+                    }
+
+                    .comment-text {
+                        color: var(--bs-body-color);
+                    }
+                }
+            }
+        }
     }
 }
 </style>
