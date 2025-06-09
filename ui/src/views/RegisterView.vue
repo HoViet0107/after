@@ -1,394 +1,241 @@
-<!-- Registration page với multi-step form, validation và social registration -->
-
 <template>
     <div class="register-view">
-        <div class="container-fluid">
-            <div class="row min-vh-100">
-                <!-- Left Side - Registration Form -->
-                <div class="col-lg-8">
-                    <div class="register-section">
-                        <div class="register-container">
-                            <!-- Header -->
-                            <div class="register-header text-center mb-4">
-                                <div class="logo-section mb-3">
-                                    <img src="/images/logo.svg" alt="Logo" class="brand-logo">
-                                    <h2 class="brand-title">SocialApp</h2>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="register-card">
+                        <!-- Header -->
+                        <div class="register-header text-center mb-4">
+                            <div class="brand-logo mb-3">
+                                <i class="fas fa-user-plus fa-3x text-primary"></i>
+                            </div>
+                            <h2 class="register-title">Tạo tài khoản</h2>
+                            <p class="register-subtitle text-muted">
+                                Tham gia cộng đồng và bắt đầu kết nối với mọi người
+                            </p>
+                        </div>
+
+                        <!-- Multi-step Progress -->
+                        <div class="progress-steps mb-4">
+                            <div class="step" :class="{ active: currentStep >= 1, completed: currentStep > 1 }">
+                                <div class="step-number">1</div>
+                                <div class="step-label">Thông tin cơ bản</div>
+                            </div>
+                            <div class="step" :class="{ active: currentStep >= 2, completed: currentStep > 2 }">
+                                <div class="step-number">2</div>
+                                <div class="step-label">Tài khoản</div>
+                            </div>
+                            <div class="step" :class="{ active: currentStep >= 3 }">
+                                <div class="step-number">3</div>
+                                <div class="step-label">Hoàn thành</div>
+                            </div>
+                        </div>
+
+                        <!-- Register Form -->
+                        <form @submit.prevent="handleSubmit" novalidate>
+                            <!-- Step 1: Basic Information -->
+                            <div v-if="currentStep === 1" class="step-content">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Họ *</label>
+                                            <input v-model="form.firstName" type="text" class="form-control"
+                                                :class="{ 'is-invalid': errors.firstName }" placeholder="Nhập họ"
+                                                @blur="validateField('firstName', form.firstName)" required>
+                                            <div v-if="errors.firstName" class="invalid-feedback">
+                                                {{ errors.firstName }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Tên *</label>
+                                            <input v-model="form.lastName" type="text" class="form-control"
+                                                :class="{ 'is-invalid': errors.lastName }" placeholder="Nhập tên"
+                                                @blur="validateField('lastName', form.lastName)" required>
+                                            <div v-if="errors.lastName" class="invalid-feedback">
+                                                {{ errors.lastName }}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <h1 class="register-title">Tạo tài khoản mới</h1>
-                                <p class="register-subtitle">Tham gia cộng đồng và kết nối với bạn bè</p>
+
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Ngày sinh</label>
+                                    <input v-model="form.dateOfBirth" type="date" class="form-control" :max="maxDate">
+                                </div>
+
+                                <div class="form-group mb-4">
+                                    <label class="form-label">Giới tính</label>
+                                    <div class="gender-options">
+                                        <div class="form-check form-check-inline">
+                                            <input v-model="form.gender" type="radio" class="form-check-input" id="male"
+                                                value="male">
+                                            <label class="form-check-label" for="male">Nam</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input v-model="form.gender" type="radio" class="form-check-input"
+                                                id="female" value="female">
+                                            <label class="form-check-label" for="female">Nữ</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input v-model="form.gender" type="radio" class="form-check-input"
+                                                id="other" value="other">
+                                            <label class="form-check-label" for="other">Khác</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="btn btn-primary w-100" @click="nextStep"
+                                    :disabled="!canProceedStep1">
+                                    Tiếp tục
+                                </button>
                             </div>
 
-                            <!-- Progress Steps -->
-                            <div class="progress-steps mb-4">
-                                <div class="step" :class="{ active: currentStep >= 1, completed: currentStep > 1 }">
-                                    <div class="step-number">1</div>
-                                    <span class="step-label">Thông tin cơ bản</span>
-                                </div>
-                                <div class="step" :class="{ active: currentStep >= 2, completed: currentStep > 2 }">
-                                    <div class="step-number">2</div>
-                                    <span class="step-label">Tài khoản</span>
-                                </div>
-                                <div class="step" :class="{ active: currentStep >= 3, completed: currentStep > 3 }">
-                                    <div class="step-number">3</div>
-                                    <span class="step-label">Xác minh</span>
-                                </div>
-                            </div>
-
-                            <!-- Registration Form -->
-                            <form @submit.prevent="handleSubmit" class="register-form">
-                                <!-- Step 1: Basic Information -->
-                                <div v-show="currentStep === 1" class="step-content">
-                                    <h3 class="step-title">Thông tin cơ bản</h3>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-3">
-                                                <label for="firstName" class="form-label">Họ và tên đệm *</label>
-                                                <input type="text" v-model="form.firstName" id="firstName" 
-                                                       class="form-control" :class="{ 'is-invalid': errors.firstName }"
-                                                       placeholder="Nhập họ và tên đệm" required>
-                                                <div v-if="errors.firstName" class="invalid-feedback">{{ errors.firstName }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-3">
-                                                <label for="lastName" class="form-label">Tên *</label>
-                                                <input type="text" v-model="form.lastName" id="lastName" 
-                                                       class="form-control" :class="{ 'is-invalid': errors.lastName }"
-                                                       placeholder="Nhập tên" required>
-                                                <div v-if="errors.lastName" class="invalid-feedback">{{ errors.lastName }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-3">
-                                                <label for="dateOfBirth" class="form-label">Ngày sinh *</label>
-                                                <input type="date" v-model="form.dateOfBirth" id="dateOfBirth" 
-                                                       class="form-control" :class="{ 'is-invalid': errors.dateOfBirth }"
-                                                       :max="maxBirthDate" required>
-                                                <div v-if="errors.dateOfBirth" class="invalid-feedback">{{ errors.dateOfBirth }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-3">
-                                                <label for="gender" class="form-label">Giới tính *</label>
-                                                <select v-model="form.gender" id="gender" class="form-select" 
-                                                        :class="{ 'is-invalid': errors.gender }" required>
-                                                    <option value="">Chọn giới tính</option>
-                                                    <option value="male">Nam</option>
-                                                    <option value="female">Nữ</option>
-                                                    <option value="other">Khác</option>
-                                                    <option value="prefer_not_to_say">Không muốn tiết lộ</option>
-                                                </select>
-                                                <div v-if="errors.gender" class="invalid-feedback">{{ errors.gender }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group mb-3">
-                                        <label for="phone" class="form-label">Số điện thoại</label>
-                                        <div class="input-group">
-                                            <select v-model="form.phoneCountryCode" class="form-select phone-country">
-                                                <option value="+84">🇻🇳 +84</option>
-                                                <option value="+1">🇺🇸 +1</option>
-                                                <option value="+86">🇨🇳 +86</option>
-                                                <option value="+81">🇯🇵 +81</option>
-                                                <option value="+82">🇰🇷 +82</option>
-                                            </select>
-                                            <input type="tel" v-model="form.phone" id="phone" 
-                                                   class="form-control" :class="{ 'is-invalid': errors.phone }"
-                                                   placeholder="Nhập số điện thoại">
-                                        </div>
-                                        <div v-if="errors.phone" class="invalid-feedback">{{ errors.phone }}</div>
+                            <!-- Step 2: Account Information -->
+                            <div v-if="currentStep === 2" class="step-content">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Email *</label>
+                                    <input v-model="form.email" type="email" class="form-control"
+                                        :class="{ 'is-invalid': errors.email }" placeholder="Nhập email"
+                                        @blur="validateField('email', form.email)" required>
+                                    <div v-if="errors.email" class="invalid-feedback">
+                                        {{ errors.email }}
                                     </div>
                                 </div>
 
-                                <!-- Step 2: Account Information -->
-                                <div v-show="currentStep === 2" class="step-content">
-                                    <h3 class="step-title">Thông tin tài khoản</h3>
-                                    
-                                    <div class="form-group mb-3">
-                                        <label for="email" class="form-label">Email *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-envelope"></i>
-                                            </span>
-                                            <input type="email" v-model="form.email" id="email" 
-                                                   class="form-control" :class="{ 'is-invalid': errors.email }"
-                                                   placeholder="Nhập địa chỉ email" autocomplete="email" 
-                                                   @blur="checkEmailAvailability" required>
-                                        </div>
-                                        <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
-                                        <div v-else-if="emailCheckStatus === 'checking'" class="form-text">
-                                            <i class="fas fa-spinner fa-spin me-1"></i>
-                                            Đang kiểm tra tính khả dụng...
-                                        </div>
-                                        <div v-else-if="emailCheckStatus === 'available'" class="form-text text-success">
-                                            <i class="fas fa-check me-1"></i>
-                                            Email khả dụng
-                                        </div>
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Tên người dùng *</label>
+                                    <input v-model="form.username" type="text" class="form-control"
+                                        :class="{ 'is-invalid': errors.username }" placeholder="Nhập username"
+                                        @blur="validateField('username', form.username)" required>
+                                    <div v-if="errors.username" class="invalid-feedback">
+                                        {{ errors.username }}
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Username chỉ chứa chữ cái, số và dấu gạch dưới
+                                    </small>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Mật khẩu *</label>
+                                    <div class="input-group">
+                                        <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
+                                            class="form-control" :class="{ 'is-invalid': errors.password }"
+                                            placeholder="Nhập mật khẩu"
+                                            @blur="validateField('password', form.password, { strength: true })"
+                                            required>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            @click="showPassword = !showPassword">
+                                            <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                        </button>
+                                    </div>
+                                    <div v-if="errors.password" class="invalid-feedback d-block">
+                                        {{ errors.password }}
                                     </div>
 
-                                    <div class="form-group mb-3">
-                                        <label for="username" class="form-label">Tên người dùng *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">@</span>
-                                            <input type="text" v-model="form.username" id="username" 
-                                                   class="form-control" :class="{ 'is-invalid': errors.username }"
-                                                   placeholder="Nhập tên người dùng" autocomplete="username"
-                                                   @blur="checkUsernameAvailability" required>
+                                    <!-- Password Strength Indicator -->
+                                    <div v-if="form.password" class="password-strength mt-2">
+                                        <div class="strength-bar">
+                                            <div class="strength-fill" :class="passwordStrengthClass"
+                                                :style="{ width: passwordStrengthPercentage + '%' }"></div>
                                         </div>
-                                        <div v-if="errors.username" class="invalid-feedback">{{ errors.username }}</div>
-                                        <div v-else-if="usernameCheckStatus === 'checking'" class="form-text">
-                                            <i class="fas fa-spinner fa-spin me-1"></i>
-                                            Đang kiểm tra tính khả dụng...
-                                        </div>
-                                        <div v-else-if="usernameCheckStatus === 'available'" class="form-text text-success">
-                                            <i class="fas fa-check me-1"></i>
-                                            Tên người dùng khả dụng
-                                        </div>
-                                        <div v-else class="form-text text-muted">
-                                            Chỉ sử dụng chữ cái, số và dấu gạch dưới. Tối thiểu 3 ký tự.
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group mb-3">
-                                        <label for="password" class="form-label">Mật khẩu *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-lock"></i>
-                                            </span>
-                                            <input :type="showPassword ? 'text' : 'password'" v-model="form.password" 
-                                                   id="password" class="form-control" :class="{ 'is-invalid': errors.password }"
-                                                   placeholder="Nhập mật khẩu" autocomplete="new-password" 
-                                                   @input="checkPasswordStrength" required>
-                                            <button type="button" class="btn btn-outline-secondary" @click="togglePassword">
-                                                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                                            </button>
-                                        </div>
-                                        <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
-                                        
-                                        <!-- Password Strength Indicator -->
-                                        <div v-if="form.password" class="password-strength mt-2">
-                                            <div class="strength-bar">
-                                                <div class="strength-fill" :class="passwordStrength.class" 
-                                                     :style="{ width: passwordStrength.percentage + '%' }"></div>
-                                            </div>
-                                            <div class="strength-text">
-                                                <span :class="passwordStrength.class">{{ passwordStrength.text }}</span>
-                                                <small class="text-muted ms-auto">{{ passwordStrength.score }}/5</small>
-                                            </div>
-                                            <ul class="password-requirements">
-                                                <li :class="{ valid: passwordChecks.length }">
-                                                    <i :class="passwordChecks.length ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
-                                                    Ít nhất 8 ký tự
-                                                </li>
-                                                <li :class="{ valid: passwordChecks.lowercase }">
-                                                    <i :class="passwordChecks.lowercase ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
-                                                    Chữ cái thường
-                                                </li>
-                                                <li :class="{ valid: passwordChecks.uppercase }">
-                                                    <i :class="passwordChecks.uppercase ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
-                                                    Chữ cái hoa
-                                                </li>
-                                                <li :class="{ valid: passwordChecks.number }">
-                                                    <i :class="passwordChecks.number ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
-                                                    Chữ số
-                                                </li>
-                                                <li :class="{ valid: passwordChecks.special }">
-                                                    <i :class="passwordChecks.special ? 'fas fa-check text-success' : 'fas fa-times text-danger'"></i>
-                                                    Ký tự đặc biệt
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group mb-3">
-                                        <label for="confirmPassword" class="form-label">Xác nhận mật khẩu *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-lock"></i>
-                                            </span>
-                                            <input :type="showConfirmPassword ? 'text' : 'password'" 
-                                                   v-model="form.confirmPassword" id="confirmPassword" 
-                                                   class="form-control" :class="{ 'is-invalid': errors.confirmPassword }"
-                                                   placeholder="Nhập lại mật khẩu" autocomplete="new-password" required>
-                                            <button type="button" class="btn btn-outline-secondary" @click="toggleConfirmPassword">
-                                                <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                                            </button>
-                                        </div>
-                                        <div v-if="errors.confirmPassword" class="invalid-feedback">{{ errors.confirmPassword }}</div>
+                                        <small class="strength-text" :class="passwordStrengthClass">
+                                            {{ passwordStrengthText }}
+                                        </small>
                                     </div>
                                 </div>
 
-                                <!-- Step 3: Verification & Terms -->
-                                <div v-show="currentStep === 3" class="step-content">
-                                    <h3 class="step-title">Xác minh và điều khoản</h3>
-                                    
-                                    <!-- reCAPTCHA -->
-                                    <div class="form-group mb-4">
-                                        <div ref="recaptcha" class="recaptcha-container d-flex justify-content-center"></div>
-                                        <div v-if="errors.captcha" class="invalid-feedback d-block">{{ errors.captcha }}</div>
-                                    </div>
-
-                                    <!-- Terms and Privacy -->
-                                    <div class="form-group mb-3">
-                                        <div class="form-check">
-                                            <input type="checkbox" v-model="form.agreeToTerms" id="agreeToTerms" 
-                                                   class="form-check-input" :class="{ 'is-invalid': errors.agreeToTerms }" required>
-                                            <label for="agreeToTerms" class="form-check-label">
-                                                Tôi đồng ý với 
-                                                <a href="/terms" target="_blank" class="text-primary">Điều khoản sử dụng</a> 
-                                                và 
-                                                <a href="/privacy" target="_blank" class="text-primary">Chính sách bảo mật</a>
-                                            </label>
-                                        </div>
-                                        <div v-if="errors.agreeToTerms" class="invalid-feedback">{{ errors.agreeToTerms }}</div>
-                                    </div>
-
-                                    <div class="form-group mb-3">
-                                        <div class="form-check">
-                                            <input type="checkbox" v-model="form.subscribeToNewsletter" id="subscribeToNewsletter" 
-                                                   class="form-check-input">
-                                            <label for="subscribeToNewsletter" class="form-check-label">
-                                                Đăng ký nhận thông báo về tính năng mới và cập nhật
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group mb-4">
-                                        <div class="form-check">
-                                            <input type="checkbox" v-model="form.allowMarketing" id="allowMarketing" 
-                                                   class="form-check-input">
-                                            <label for="allowMarketing" class="form-check-label">
-                                                Cho phép nhận email marketing và khuyến mãi
-                                            </label>
-                                        </div>
+                                <div class="form-group mb-4">
+                                    <label class="form-label">Xác nhận mật khẩu *</label>
+                                    <input v-model="form.confirmPassword" type="password" class="form-control"
+                                        :class="{ 'is-invalid': errors.confirmPassword }"
+                                        placeholder="Nhập lại mật khẩu"
+                                        @blur="validateField('confirmPassword', form.confirmPassword, { password: form.password })"
+                                        required>
+                                    <div v-if="errors.confirmPassword" class="invalid-feedback">
+                                        {{ errors.confirmPassword }}
                                     </div>
                                 </div>
 
-                                <!-- Form Actions -->
-                                <div class="form-actions">
-                                    <button v-if="currentStep > 1" type="button" class="btn btn-outline-secondary me-3" 
-                                            @click="previousStep" :disabled="isLoading">
-                                        <i class="fas fa-arrow-left me-2"></i>
+                                <div class="step-actions">
+                                    <button type="button" class="btn btn-outline-secondary me-2" @click="previousStep">
                                         Quay lại
                                     </button>
-                                    
-                                    <button v-if="currentStep < 3" type="button" class="btn btn-primary" 
-                                            @click="nextStep" :disabled="!canProceedToNextStep">
-                                        Tiếp theo
-                                        <i class="fas fa-arrow-right ms-2"></i>
+                                    <button type="button" class="btn btn-primary flex-grow-1" @click="nextStep"
+                                        :disabled="!canProceedStep2">
+                                        Tiếp tục
                                     </button>
-                                    
-                                    <button v-else type="submit" class="btn btn-success" 
-                                            :disabled="isLoading || !canSubmit">
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Terms and Submit -->
+                            <div v-if="currentStep === 3" class="step-content">
+                                <div class="terms-section mb-4">
+                                    <div class="form-check mb-3">
+                                        <input v-model="form.agreeToTerms" type="checkbox" class="form-check-input"
+                                            id="agreeTerms" required>
+                                        <label class="form-check-label" for="agreeTerms">
+                                            Tôi đồng ý với
+                                            <a href="/terms" target="_blank">Điều khoản sử dụng</a>
+                                            và
+                                            <a href="/privacy" target="_blank">Chính sách bảo mật</a>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input v-model="form.subscribeToNewsletter" type="checkbox"
+                                            class="form-check-input" id="newsletter">
+                                        <label class="form-check-label" for="newsletter">
+                                            Nhận thông tin cập nhật và newsletter
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="step-actions">
+                                    <button type="button" class="btn btn-outline-secondary me-2" @click="previousStep">
+                                        Quay lại
+                                    </button>
+                                    <button type="submit" class="btn btn-primary flex-grow-1"
+                                        :disabled="!canSubmit || isLoading">
                                         <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
-                                        <i v-else class="fas fa-user-plus me-2"></i>
                                         {{ isLoading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản' }}
                                     </button>
                                 </div>
-                            </form>
-
-                            <!-- Social Register Divider -->
-                            <div class="divider my-4">
-                                <span>hoặc đăng ký với</span>
                             </div>
+                        </form>
 
-                            <!-- Social Register Buttons -->
-                            <div class="social-register">
-                                <button type="button" class="btn btn-google" @click="registerWithGoogle" :disabled="isLoading">
-                                    <i class="fab fa-google me-2"></i>
-                                    Google
-                                </button>
-                                <button type="button" class="btn btn-facebook" @click="registerWithFacebook" :disabled="isLoading">
-                                    <i class="fab fa-facebook-f me-2"></i>
-                                    Facebook
-                                </button>
-                                <button type="button" class="btn btn-github" @click="registerWithGithub" :disabled="isLoading">
-                                    <i class="fab fa-github me-2"></i>
-                                    GitHub
-                                </button>
-                            </div>
-
-                            <!-- Login Link -->
-                            <div class="login-link text-center mt-4">
-                                <p class="mb-0">
-                                    Đã có tài khoản? 
-                                    <router-link to="/login" class="login-text">Đăng nhập ngay</router-link>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Side - Benefits -->
-                <div class="col-lg-4 d-none d-lg-block">
-                    <div class="benefits-section">
-                        <div class="benefits-content">
-                            <h3 class="benefits-title">Tại sao chọn SocialApp?</h3>
-                            
-                            <div class="benefit-item" v-for="(benefit, index) in benefits" :key="benefit.id"
-                                 data-aos="fade-left" :data-aos-delay="index * 100">
-                                <div class="benefit-icon">
-                                    <i :class="benefit.icon"></i>
-                                </div>
-                                <div class="benefit-content">
-                                    <h4>{{ benefit.title }}</h4>
-                                    <p>{{ benefit.description }}</p>
-                                </div>
-                            </div>
-
-                            <div class="stats-section" data-aos="fade-up" data-aos-delay="400">
-                                <h4 class="stats-title">Tham gia cộng đồng</h4>
-                                <div class="stats-grid">
-                                    <div class="stat-item" v-for="stat in stats" :key="stat.id">
-                                        <div class="stat-number">{{ stat.number }}</div>
-                                        <div class="stat-label">{{ stat.label }}</div>
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- Login Link -->
+                        <div class="login-link text-center mt-4">
+                            <span class="text-muted">Đã có tài khoản? </span>
+                            <router-link to="/auth/login" class="login-text">
+                                Đăng nhập ngay
+                            </router-link>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Email Verification Modal -->
-        <EmailVerificationModal v-if="showEmailVerificationModal" :email="form.email"
-                                @close="showEmailVerificationModal = false" @verified="handleEmailVerified" />
     </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'vue-toastification'
-import { validatePasswordStrength } from '@/utils/cryptoUtils'
-import { debounce } from 'lodash-es'
-import AOS from 'aos'
-import EmailVerificationModal from '@/components/auth/EmailVerificationModal.vue'
+import { useAuthValidation } from '@/composables/useAuthValidation'
+import { useAppStores } from '@/composables/useAppStores'
+import { validatePassword } from '@/utils/validators'
 
-// Router & Stores
 const router = useRouter()
-const authStore = useAuthStore()
 const toast = useToast()
-
-// Refs
-const recaptcha = ref(null)
+const { authStore } = useAppStores()
+const { errors, validateField, validateForm, hasErrors } = useAuthValidation()
 
 // State
 const currentStep = ref(1)
 const isLoading = ref(false)
 const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-const captchaToken = ref(null)
-const emailCheckStatus = ref('') // '', 'checking', 'available', 'unavailable'
-const usernameCheckStatus = ref('') // '', 'checking', 'available', 'unavailable'
-const showEmailVerificationModal = ref(false)
 
 // Form data
 const form = reactive({
@@ -396,231 +243,63 @@ const form = reactive({
     lastName: '',
     dateOfBirth: '',
     gender: '',
-    phone: '',
-    phoneCountryCode: '+84',
     email: '',
     username: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
-    subscribeToNewsletter: false,
-    allowMarketing: false
+    subscribeToNewsletter: false
 })
-
-// Validation errors
-const errors = reactive({})
-
-// Password strength
-const passwordStrength = ref({ score: 0, text: '', class: '', percentage: 0 })
-const passwordChecks = ref({
-    length: false,
-    lowercase: false,
-    uppercase: false,
-    number: false,
-    special: false
-})
-
-// Data
-const benefits = ref([
-    {
-        id: 1,
-        icon: 'fas fa-users',
-        title: 'Kết nối toàn cầu',
-        description: 'Kết nối với hàng triệu người dùng trên khắp thế giới'
-    },
-    {
-        id: 2,
-        icon: 'fas fa-shield-alt',
-        title: 'Bảo mật tuyệt đối',
-        description: 'Thông tin của bạn được bảo vệ với công nghệ bảo mật hàng đầu'
-    },
-    {
-        id: 3,
-        icon: 'fas fa-mobile-alt',
-        title: 'Đa nền tảng',
-        description: 'Sử dụng trên mọi thiết bị, mọi lúc mọi nơi'
-    },
-    {
-        id: 4,
-        icon: 'fas fa-heart',
-        title: 'Miễn phí',
-        description: 'Tất cả tính năng cơ bản hoàn toàn miễn phí'
-    }
-])
-
-const stats = ref([
-    { id: 1, number: '2M+', label: 'Người dùng' },
-    { id: 2, number: '50M+', label: 'Bài viết' },
-    { id: 3, number: '150+', label: 'Quốc gia' },
-    { id: 4, number: '99.9%', label: 'Uptime' }
-])
 
 // Computed
-const maxBirthDate = computed(() => {
+const maxDate = computed(() => {
     const today = new Date()
-    const minAge = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate())
-    return minAge.toISOString().split('T')[0]
+    today.setFullYear(today.getFullYear() - 13) // Minimum age 13
+    return today.toISOString().split('T')[0]
 })
 
-const canProceedToNextStep = computed(() => {
-    if (currentStep.value === 1) {
-        return validateStep1()
-    } else if (currentStep.value === 2) {
-        return validateStep2()
-    }
-    return false
+const canProceedStep1 = computed(() => {
+    return form.firstName.trim() && form.lastName.trim()
+})
+
+const canProceedStep2 = computed(() => {
+    return form.email && form.username && form.password &&
+        form.confirmPassword && !hasErrors.value
 })
 
 const canSubmit = computed(() => {
-    return validateStep3() && captchaToken.value && !isLoading.value
+    return form.agreeToTerms && canProceedStep2.value
+})
+
+const passwordStrength = computed(() => {
+    if (!form.password) return { score: 0, text: '', class: '', percentage: 0 }
+    return validatePassword(form.password)
+})
+
+const passwordStrengthClass = computed(() => {
+    const score = passwordStrength.value.score
+    if (score <= 2) return 'text-danger'
+    if (score <= 3) return 'text-warning'
+    return 'text-success'
+})
+
+const passwordStrengthText = computed(() => {
+    const score = passwordStrength.value.score
+    if (score <= 1) return 'Rất yếu'
+    if (score <= 2) return 'Yếu'
+    if (score <= 3) return 'Trung bình'
+    if (score <= 4) return 'Mạnh'
+    return 'Rất mạnh'
+})
+
+const passwordStrengthPercentage = computed(() => {
+    return (passwordStrength.value.score / 5) * 100
 })
 
 // Methods
-const validateStep1 = () => {
-    const requiredFields = ['firstName', 'lastName', 'dateOfBirth', 'gender']
-    return requiredFields.every(field => form[field].trim())
-}
-
-const validateStep2 = () => {
-    return form.email && form.username && form.password && form.confirmPassword &&
-           emailCheckStatus.value === 'available' && usernameCheckStatus.value === 'available' &&
-           passwordStrength.value.score >= 3 && form.password === form.confirmPassword
-}
-
-const validateStep3 = () => {
-    return form.agreeToTerms && captchaToken.value
-}
-
-const validateCurrentStep = () => {
-    clearErrors()
-    
-    if (currentStep.value === 1) {
-        return validateFormStep1()
-    } else if (currentStep.value === 2) {
-        return validateFormStep2()
-    } else if (currentStep.value === 3) {
-        return validateFormStep3()
-    }
-    
-    return true
-}
-
-const validateFormStep1 = () => {
-    let isValid = true
-
-    if (!form.firstName.trim()) {
-        errors.firstName = 'Vui lòng nhập họ và tên đệm'
-        isValid = false
-    }
-
-    if (!form.lastName.trim()) {
-        errors.lastName = 'Vui lòng nhập tên'
-        isValid = false
-    }
-
-    if (!form.dateOfBirth) {
-        errors.dateOfBirth = 'Vui lòng chọn ngày sinh'
-        isValid = false
-    } else {
-        const birthDate = new Date(form.dateOfBirth)
-        const today = new Date()
-        const age = today.getFullYear() - birthDate.getFullYear()
-        
-        if (age < 13) {
-            errors.dateOfBirth = 'Bạn phải từ 13 tuổi trở lên để đăng ký'
-            isValid = false
-        }
-    }
-
-    if (!form.gender) {
-        errors.gender = 'Vui lòng chọn giới tính'
-        isValid = false
-    }
-
-    if (form.phone && !validatePhone(form.phone)) {
-        errors.phone = 'Số điện thoại không hợp lệ'
-        isValid = false
-    }
-
-    return isValid
-}
-
-const validateFormStep2 = () => {
-    let isValid = true
-
-    if (!form.email) {
-        errors.email = 'Vui lòng nhập email'
-        isValid = false
-    } else if (!isValidEmail(form.email)) {
-        errors.email = 'Email không hợp lệ'
-        isValid = false
-    } else if (emailCheckStatus.value === 'unavailable') {
-        errors.email = 'Email này đã được sử dụng'
-        isValid = false
-    }
-
-    if (!form.username) {
-        errors.username = 'Vui lòng nhập tên người dùng'
-        isValid = false
-    } else if (!isValidUsername(form.username)) {
-        errors.username = 'Tên người dùng chỉ được chứa chữ cái, số và dấu gạch dưới'
-        isValid = false
-    } else if (form.username.length < 3) {
-        errors.username = 'Tên người dùng phải có ít nhất 3 ký tự'
-        isValid = false
-    } else if (usernameCheckStatus.value === 'unavailable') {
-        errors.username = 'Tên người dùng này đã được sử dụng'
-        isValid = false
-    }
-
-    if (!form.password) {
-        errors.password = 'Vui lòng nhập mật khẩu'
-        isValid = false
-    } else if (passwordStrength.value.score < 3) {
-        errors.password = 'Mật khẩu chưa đủ mạnh'
-        isValid = false
-    }
-
-    if (!form.confirmPassword) {
-        errors.confirmPassword = 'Vui lòng xác nhận mật khẩu'
-        isValid = false
-    } else if (form.password !== form.confirmPassword) {
-        errors.confirmPassword = 'Mật khẩu xác nhận không khớp'
-        isValid = false
-    }
-
-    return isValid
-}
-
-const validateFormStep3 = () => {
-    let isValid = true
-
-    if (!captchaToken.value) {
-        errors.captcha = 'Vui lòng hoàn thành xác minh captcha'
-        isValid = false
-    }
-
-    if (!form.agreeToTerms) {
-        errors.agreeToTerms = 'Bạn phải đồng ý với điều khoản sử dụng'
-        isValid = false
-    }
-
-    return isValid
-}
-
-const clearErrors = () => {
-    Object.keys(errors).forEach(key => {
-        delete errors[key]
-    })
-}
-
 const nextStep = () => {
-    if (validateCurrentStep() && canProceedToNextStep.value) {
+    if (currentStep.value < 3) {
         currentStep.value++
-        
-        if (currentStep.value === 3) {
-            nextTick(() => initRecaptcha())
-        }
     }
 }
 
@@ -631,779 +310,319 @@ const previousStep = () => {
 }
 
 const handleSubmit = async () => {
-    if (!validateCurrentStep() || !canSubmit.value) return
+    // Final validation
+    const validationRules = {
+        password: { strength: true },
+        confirmPassword: { password: form.password }
+    }
+
+    if (!validateForm(form, validationRules)) {
+        return
+    }
+
+    if (!form.agreeToTerms) {
+        toast.error('Vui lòng đồng ý với điều khoản sử dụng')
+        return
+    }
 
     isLoading.value = true
 
     try {
-        const registrationData = {
-            ...form,
-            fullName: `${form.firstName} ${form.lastName}`.trim(),
-            captchaToken: captchaToken.value
+        const registerData = {
+            firstName: form.firstName.trim(),
+            lastName: form.lastName.trim(),
+            email: form.email.trim().toLowerCase(),
+            username: form.username.trim().toLowerCase(),
+            password: form.password,
+            dateOfBirth: form.dateOfBirth || null,
+            gender: form.gender || null,
+            subscribeToNewsletter: form.subscribeToNewsletter
         }
 
-        const result = await authStore.register(registrationData)
+        await authStore.register(registerData)
 
-        if (result.requiresEmailVerification) {
-            showEmailVerificationModal.value = true
-        } else {
-            handleRegistrationSuccess()
-        }
+        toast.success('Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.')
+
+        // Redirect to login or email verification page
+        router.push('/auth/login?registered=true')
 
     } catch (error) {
-        handleRegistrationError(error)
-    } finally {
-        isLoading.value = false
-    }
-}
+        console.error('Register error:', error)
 
-const handleRegistrationSuccess = () => {
-    toast.success('Đăng ký thành công!')
-    router.push('/login?registered=true')
-}
+        const errorMessage = error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.'
+        toast.error(errorMessage)
 
-const handleRegistrationError = (error) => {
-    if (error.field) {
-        errors[error.field] = error.message
-    } else {
-        toast.error(error.message || 'Đăng ký thất bại. Vui lòng thử lại.')
-    }
+        // Handle specific errors
+        if (error.response?.status === 400) {
+            const serverErrors = error.response.data?.errors || {}
+            Object.keys(serverErrors).forEach(field => {
+                if (errors.hasOwnProperty(field)) {
+                    errors[field] = serverErrors[field][0]
+                }
+            })
 
-    // Reset captcha
-    resetRecaptcha()
-    captchaToken.value = null
-}
-
-const handleEmailVerified = () => {
-    showEmailVerificationModal.value = false
-    handleRegistrationSuccess()
-}
-
-// Validation helpers
-const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-}
-
-const isValidUsername = (username) => {
-    const usernameRegex = /^[a-zA-Z0-9_]+$/
-    return usernameRegex.test(username)
-}
-
-const validatePhone = (phone) => {
-    const phoneRegex = /^\d{9,15}$/
-    return phoneRegex.test(phone.replace(/\s/g, ''))
-}
-
-// Availability checks
-const checkEmailAvailability = debounce(async () => {
-    if (!form.email || !isValidEmail(form.email)) return
-
-    emailCheckStatus.value = 'checking'
-    
-    try {
-        const isAvailable = await authStore.checkEmailAvailability(form.email)
-        emailCheckStatus.value = isAvailable ? 'available' : 'unavailable'
-        
-        if (!isAvailable) {
-            errors.email = 'Email này đã được sử dụng'
-        }
-    } catch (error) {
-        emailCheckStatus.value = ''
-    }
-}, 500)
-
-const checkUsernameAvailability = debounce(async () => {
-    if (!form.username || !isValidUsername(form.username) || form.username.length < 3) return
-
-    usernameCheckStatus.value = 'checking'
-    
-    try {
-        const isAvailable = await authStore.checkUsernameAvailability(form.username)
-        usernameCheckStatus.value = isAvailable ? 'available' : 'unavailable'
-        
-        if (!isAvailable) {
-            errors.username = 'Tên người dùng này đã được sử dụng'
-        }
-    } catch (error) {
-        usernameCheckStatus.value = ''
-    }
-}, 500)
-
-// Password strength
-const checkPasswordStrength = () => {
-    if (!form.password) {
-        passwordStrength.value = { score: 0, text: '', class: '', percentage: 0 }
-        passwordChecks.value = {
-            length: false,
-            lowercase: false,
-            uppercase: false,
-            number: false,
-            special: false
-        }
-        return
-    }
-
-    const result = validatePasswordStrength(form.password)
-    passwordStrength.value = {
-        score: result.score,
-        text: result.strength,
-        class: getStrengthClass(result.score),
-        percentage: (result.score / 5) * 100
-    }
-
-    passwordChecks.value = {
-        length: form.password.length >= 8,
-        lowercase: /[a-z]/.test(form.password),
-        uppercase: /[A-Z]/.test(form.password),
-        number: /[0-9]/.test(form.password),
-        special: /[^A-Za-z0-9]/.test(form.password)
-    }
-}
-
-const getStrengthClass = (score) => {
-    if (score < 2) return 'text-danger'
-    if (score < 3) return 'text-warning'
-    if (score < 4) return 'text-info'
-    return 'text-success'
-}
-
-// Password visibility
-const togglePassword = () => {
-    showPassword.value = !showPassword.value
-}
-
-const toggleConfirmPassword = () => {
-    showConfirmPassword.value = !showConfirmPassword.value
-}
-
-// Social registration
-const registerWithGoogle = async () => {
-    try {
-        isLoading.value = true
-        await authStore.registerWithGoogle()
-        handleRegistrationSuccess()
-    } catch (error) {
-        toast.error('Đăng ký Google thất bại')
-    } finally {
-        isLoading.value = false
-    }
-}
-
-const registerWithFacebook = async () => {
-    try {
-        isLoading.value = true
-        await authStore.registerWithFacebook()
-        handleRegistrationSuccess()
-    } catch (error) {
-        toast.error('Đăng ký Facebook thất bại')
-    } finally {
-        isLoading.value = false
-    }
-}
-
-const registerWithGithub = async () => {
-    try {
-        isLoading.value = true
-        await authStore.registerWithGithub()
-        handleRegistrationSuccess()
-    } catch (error) {
-        toast.error('Đăng ký GitHub thất bại')
-    } finally {
-        isLoading.value = false
-    }
-}
-
-// reCAPTCHA
-const initRecaptcha = () => {
-    if (typeof grecaptcha !== 'undefined' && recaptcha.value) {
-        grecaptcha.render(recaptcha.value, {
-            sitekey: import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-            callback: (token) => {
-                captchaToken.value = token
-                delete errors.captcha
-            },
-            'expired-callback': () => {
-                captchaToken.value = null
+            // Go back to appropriate step if there are errors
+            if (errors.email || errors.username || errors.password) {
+                currentStep.value = 2
+            } else if (errors.firstName || errors.lastName) {
+                currentStep.value = 1
             }
-        })
+        }
+
+    } finally {
+        isLoading.value = false
     }
 }
 
-const resetRecaptcha = () => {
-    if (typeof grecaptcha !== 'undefined') {
-        grecaptcha.reset()
-    }
-}
-
-// Lifecycle
+// Auto-focus first input on mount
 onMounted(() => {
-    // Initialize AOS
-    AOS.init({
-        duration: 800,
-        once: true
-    })
-
-    // Load reCAPTCHA script
-    loadRecaptchaScript()
-
-    // Check if user is already logged in
-    if (authStore.isLoggedIn) {
-        router.replace('/feed')
+    const firstInput = document.querySelector('input[type="text"]')
+    if (firstInput) {
+        firstInput.focus()
     }
 })
-
-// Load reCAPTCHA script
-const loadRecaptchaScript = () => {
-    if (document.querySelector('script[src*="recaptcha"]')) return
-
-    const script = document.createElement('script')
-    script.src = 'https://www.google.com/recaptcha/api.js'
-    script.async = true
-    script.defer = true
-    document.head.appendChild(script)
-}
 </script>
 
 <style lang="scss" scoped>
 .register-view {
-    background: var(--bs-light);
     min-height: 100vh;
-}
-
-// Register Section
-.register-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem 1rem;
+    padding: 2rem 0;
+    position: relative;
 
-    .register-container {
-        width: 100%;
-        max-width: 600px;
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('/patterns/auth-pattern.svg') repeat;
+        opacity: 0.1;
+    }
+}
 
-        .register-header {
-            .logo-section {
-                .brand-logo {
-                    height: 50px;
-                    margin-bottom: 0.5rem;
-                }
+.register-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+}
 
-                .brand-title {
-                    font-size: 1.8rem;
-                    font-weight: 700;
-                    color: var(--bs-primary);
-                    margin: 0;
-                }
-            }
+.brand-logo i {
+    animation: bounce 2s infinite;
+}
 
-            .register-title {
-                font-size: 2rem;
-                font-weight: 700;
-                color: var(--bs-dark);
-                margin-bottom: 0.5rem;
-            }
+.register-title {
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
 
-            .register-subtitle {
-                color: var(--bs-secondary);
-                margin: 0;
-            }
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        position: relative;
+
+        &:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 60%;
+            right: -40%;
+            height: 2px;
+            background: #e9ecef;
+            z-index: 0;
         }
 
-        .progress-steps {
+        &.active::after,
+        &.completed::after {
+            background: #667eea;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #6c757d;
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 2rem;
-
-            .step {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                position: relative;
-
-                &:not(:last-child)::after {
-                    content: '';
-                    position: absolute;
-                    top: 20px;
-                    left: 60%;
-                    right: -40%;
-                    height: 2px;
-                    background: var(--bs-border-color);
-                    z-index: 1;
-                }
-
-                &.completed::after {
-                    background: var(--bs-success);
-                }
-
-                .step-number {
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    background: var(--bs-light);
-                    color: var(--bs-secondary);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-weight: 600;
-                    margin-bottom: 0.5rem;
-                    position: relative;
-                    z-index: 2;
-                    transition: all 0.3s ease;
-                }
-
-                .step-label {
-                    font-size: 0.9rem;
-                    color: var(--bs-secondary);
-                    text-align: center;
-                    font-weight: 500;
-                }
-
-                &.active {
-                    .step-number {
-                        background: var(--bs-primary);
-                        color: white;
-                    }
-
-                    .step-label {
-                        color: var(--bs-primary);
-                        font-weight: 600;
-                    }
-                }
-
-                &.completed {
-                    .step-number {
-                        background: var(--bs-success);
-                        color: white;
-                    }
-
-                    .step-label {
-                        color: var(--bs-success);
-                    }
-                }
-            }
-        }
-
-        .register-form {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            margin-bottom: 1rem;
-
-            .step-content {
-                .step-title {
-                    font-size: 1.5rem;
-                    font-weight: 600;
-                    color: var(--bs-dark);
-                    margin-bottom: 1.5rem;
-                    text-align: center;
-                }
-
-                .form-group {
-                    .form-label {
-                        font-weight: 600;
-                        color: var(--bs-dark);
-                        margin-bottom: 0.5rem;
-                    }
-
-                    .input-group {
-                        .input-group-text {
-                            background: var(--bs-light);
-                            border-right: none;
-                            color: var(--bs-secondary);
-                        }
-
-                        .form-control,
-                        .form-select {
-                            border-left: none;
-
-                            &:focus {
-                                border-color: var(--bs-primary);
-                                box-shadow: none;
-                            }
-                        }
-
-                        .phone-country {
-                            max-width: 120px;
-                            border-right: none;
-                        }
-                    }
-
-                    .password-strength {
-                        .strength-bar {
-                            height: 4px;
-                            background: var(--bs-light);
-                            border-radius: 2px;
-                            overflow: hidden;
-                            margin-bottom: 0.5rem;
-
-                            .strength-fill {
-                                height: 100%;
-                                transition: all 0.3s ease;
-                                border-radius: 2px;
-
-                                &.text-danger {
-                                    background: var(--bs-danger);
-                                }
-
-                                &.text-warning {
-                                    background: var(--bs-warning);
-                                }
-
-                                &.text-info {
-                                    background: var(--bs-info);
-                                }
-
-                                &.text-success {
-                                    background: var(--bs-success);
-                                }
-                            }
-                        }
-
-                        .strength-text {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 0.5rem;
-                            font-size: 0.9rem;
-                        }
-
-                        .password-requirements {
-                            list-style: none;
-                            padding: 0;
-                            margin: 0;
-                            display: grid;
-                            grid-template-columns: repeat(2, 1fr);
-                            gap: 0.25rem;
-
-                            li {
-                                font-size: 0.8rem;
-                                display: flex;
-                                align-items: center;
-                                gap: 0.5rem;
-
-                                &.valid {
-                                    color: var(--bs-success);
-                                }
-                            }
-                        }
-                    }
-
-                    .recaptcha-container {
-                        transform: scale(0.9);
-                        transform-origin: center;
-                    }
-                }
-            }
-
-            .form-actions {
-                display: flex;
-                justify-content: center;
-                margin-top: 2rem;
-
-                .btn {
-                    border-radius: 25px;
-                    font-weight: 600;
-                    padding: 0.75rem 2rem;
-                    transition: transform 0.2s ease;
-
-                    &:hover:not(:disabled) {
-                        transform: translateY(-2px);
-                    }
-
-                    &.btn-primary {
-                        background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
-                        border: none;
-                    }
-
-                    &.btn-success {
-                        background: linear-gradient(135deg, var(--bs-success), #198754);
-                        border: none;
-                    }
-                }
-            }
-        }
-
-        .divider {
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
             position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        &.active .step-number,
+        &.completed .step-number {
+            background: #667eea;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: #6c757d;
             text-align: center;
-            margin: 1.5rem 0;
-
-            &::before {
-                content: '';
-                position: absolute;
-                top: 50%;
-                left: 0;
-                right: 0;
-                height: 1px;
-                background: var(--bs-border-color);
-            }
-
-            span {
-                background: var(--bs-light);
-                padding: 0 1rem;
-                color: var(--bs-secondary);
-                font-size: 0.9rem;
-            }
         }
 
-        .social-register {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-
-            .btn {
-                border-radius: 25px;
-                font-weight: 600;
-                padding: 0.75rem 1rem;
-                transition: transform 0.2s ease;
-
-                &:hover:not(:disabled) {
-                    transform: translateY(-2px);
-                }
-
-                &.btn-google {
-                    background: #db4437;
-                    border-color: #db4437;
-                    color: white;
-
-                    &:hover {
-                        background: #c23321;
-                        border-color: #c23321;
-                    }
-                }
-
-                &.btn-facebook {
-                    background: #3b5998;
-                    border-color: #3b5998;
-                    color: white;
-
-                    &:hover {
-                        background: #2d4373;
-                        border-color: #2d4373;
-                    }
-                }
-
-                &.btn-github {
-                    background: #333;
-                    border-color: #333;
-                    color: white;
-
-                    &:hover {
-                        background: #222;
-                        border-color: #222;
-                    }
-                }
-            }
-        }
-
-        .login-link {
-            .login-text {
-                color: var(--bs-primary);
-                text-decoration: none;
-                font-weight: 600;
-
-                &:hover {
-                    text-decoration: underline;
-                }
-            }
+        &.active .step-label,
+        &.completed .step-label {
+            color: #667eea;
+            font-weight: 600;
         }
     }
 }
 
-// Benefits Section
-.benefits-section {
-    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-secondary) 100%);
-    color: white;
+.form-group {
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border-radius: 0.5rem;
+        border: 1px solid #e9ecef;
+        padding: 0.75rem;
+
+        &:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        &.is-invalid {
+            border-color: #dc3545;
+        }
+    }
+}
+
+.gender-options {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
+    gap: 2rem;
+}
 
-    .benefits-content {
-        max-width: 400px;
+.password-strength {
+    .strength-bar {
+        height: 4px;
+        background: #e9ecef;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 0.25rem;
 
-        .benefits-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
+        .strength-fill {
+            height: 100%;
+            transition: width 0.3s ease;
 
-        .benefit-item {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-
-            .benefit-icon {
-                width: 50px;
-                height: 50px;
-                background: rgba(255, 255, 255, 0.2);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-right: 1rem;
-                flex-shrink: 0;
-
-                i {
-                    font-size: 1.25rem;
-                }
+            &.text-danger {
+                background: #dc3545;
             }
 
-            .benefit-content {
-                h4 {
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    margin-bottom: 0.5rem;
-                }
+            &.text-warning {
+                background: #ffc107;
+            }
 
-                p {
-                    margin: 0;
-                    opacity: 0.9;
-                    font-size: 0.9rem;
-                    line-height: 1.5;
-                }
+            &.text-success {
+                background: #28a745;
             }
         }
+    }
 
-        .stats-section {
-            text-align: center;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+    .strength-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+}
 
-            .stats-title {
-                font-size: 1.25rem;
-                font-weight: 600;
-                margin-bottom: 1.5rem;
-            }
+.step-actions {
+    display: flex;
+    gap: 0.5rem;
+}
 
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
 
-                .stat-item {
-                    .stat-number {
-                        font-size: 1.5rem;
-                        font-weight: 700;
-                        color: #ffd700;
-                        display: block;
-                        margin-bottom: 0.25rem;
-                    }
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+}
 
-                    .stat-label {
-                        font-size: 0.8rem;
-                        opacity: 0.9;
-                    }
-                }
+.terms-section {
+    .form-check-label {
+        a {
+            color: #667eea;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
             }
         }
     }
 }
 
-// Responsive
-@media (max-width: 992px) {
-    .register-section {
-        .register-container {
-            max-width: 500px;
+.login-text {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
 
-            .register-form {
-                .step-content {
-                    .password-requirements {
-                        grid-template-columns: 1fr;
-                    }
-                }
-
-                .social-register {
-                    grid-template-columns: 1fr;
-                    gap: 0.5rem;
-                }
-            }
-        }
+    &:hover {
+        text-decoration: underline;
     }
 }
 
-@media (max-width: 768px) {
-    .register-section {
-        padding: 1rem;
+@keyframes bounce {
 
-        .register-container {
-            .progress-steps {
-                .step {
-                    .step-label {
-                        font-size: 0.8rem;
-                    }
-                }
-            }
+    0%,
+    100% {
+        transform: translateY(0);
+    }
 
-            .register-form {
-                padding: 1.5rem;
-
-                .form-actions {
-                    flex-direction: column;
-                    gap: 1rem;
-
-                    .btn {
-                        width: 100%;
-                    }
-                }
-            }
-        }
+    50% {
+        transform: translateY(-10px);
     }
 }
 
 @media (max-width: 576px) {
-    .register-section {
-        .register-container {
-            .progress-steps {
-                .step {
-                    .step-number {
-                        width: 30px;
-                        height: 30px;
-                        font-size: 0.8rem;
-                    }
+    .register-view {
+        padding: 1rem;
+    }
 
-                    .step-label {
-                        display: none;
-                    }
+    .register-card {
+        padding: 2rem 1.5rem;
+    }
 
-                    &:not(:last-child)::after {
-                        top: 15px;
-                    }
-                }
-            }
-
-            .register-header {
-                .register-title {
-                    font-size: 1.75rem;
-                }
-            }
-
-            .register-form {
-                .step-content {
-                    .step-title {
-                        font-size: 1.25rem;
-                    }
-
-                    .password-strength {
-                        .recaptcha-container {
-                            transform: scale(0.8);
-                        }
-                    }
-                }
-            }
+    .progress-steps {
+        .step-label {
+            font-size: 0.7rem;
         }
+    }
+
+    .gender-options {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .step-actions {
+        flex-direction: column;
     }
 }
 </style>

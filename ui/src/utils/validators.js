@@ -176,7 +176,7 @@ export const custom = (validatorFn, message) => (value, fieldName = 'Trường n
  * @param {string} [fieldName='Email'] - An optional field name associated with the validation.
  * @returns {ValidationResult} A validation result indicating success or failure.
  */
-export const email = (value, fieldName = 'Email') => {
+export const validateEmail = (value, fieldName = 'Email') => {
     if (!value) return ValidationResult.success()
 
     if (!REGEX_PATTERNS.EMAIL.test(value.trim())) {
@@ -192,7 +192,7 @@ export const email = (value, fieldName = 'Email') => {
  * @param {string} [fieldName='Số điện thoại'] - An optional field name associated with the validation.
  * @returns {ValidationResult} A validation result indicating success or failure.
  */
-export const phone = (value, fieldName = 'Số điện thoại') => {
+export const validatePhone = (value, fieldName = 'Số điện thoại') => {
     if (!value) return ValidationResult.success()
 
     if (!REGEX_PATTERNS.PHONE.test(value.trim())) {
@@ -214,7 +214,7 @@ export const phone = (value, fieldName = 'Số điện thoại') => {
  * - Does not exceed a maximum length defined by USER_CONFIG.PASSWORD_MAX_LENGTH
  * - Contains at least one uppercase letter, one lowercase letter, and one digit
  */
-export const password = (value, fieldName = 'Mật khẩu') => {
+export const validatePassword = (value, fieldName = 'Mật khẩu') => {
     if (!value) return ValidationResult.success()
 
     if (value.length < USER_CONFIG.PASSWORD_MIN_LENGTH) {
@@ -644,7 +644,7 @@ export class FormValidator {
      * @param {string} [trigger='submit'] - The trigger event for validation (default 'submit').
      * @returns {boolean} `true` if the form is valid, `false` otherwise.
      */
-    validateForm(formData, trigger = 'submit') {
+    validateFormData(formData, trigger = 'submit') {
         this.isValidating = true
         let isValid = true
 
@@ -735,7 +735,7 @@ export class FormValidator {
  */
 export const createLoginValidator = () => {
     return new FormValidator()
-        .field('email', [required, email], 'blur')
+        .field('email', [required, validateEmail], 'blur')
         .field('password', [required], 'blur')
 }
 
@@ -746,8 +746,8 @@ export const createLoginValidator = () => {
  */
 export const createRegisterValidator = () => {
     return new FormValidator()
-        .field('email', [required, email], 'blur')
-        .field('password', [required, password], 'blur')
+        .field('email', [required, validateEmail], 'blur')
+        .field('password', [required, validatePassword], 'blur')
         .field('confirmPassword', [], 'blur') // Will be handled separately
         .field('firstName', [required, minLength(2), maxLength(50)], 'blur')
         .field('lastName', [required, minLength(2), maxLength(50)], 'blur')
@@ -808,7 +808,7 @@ export const createProfileValidator = () => {
 export const createPasswordChangeValidator = () => {
     return new FormValidator()
         .field('currentPassword', [required], 'blur')
-        .field('newPassword', [required, password], 'blur')
+        .field('newPassword', [required, validatePassword], 'blur')
         .field('confirmNewPassword', [], 'blur') // Will be handled separately
 }
 
@@ -891,9 +891,9 @@ export default {
     custom,
 
     // Specific validators
-    email,
-    phone,
-    password,
+    email: validateEmail,
+    phone: validatePhone,
+    password: validatePassword,
     confirmPassword,
     url,
     date,

@@ -1,404 +1,311 @@
-// Trang cài đặt người dùng với các tab settings, theme switching và preference management
 <template>
     <div class="settings-view">
-        <div class="container-fluid">
+        <div class="container">
             <div class="row">
-                <!-- Sidebar Navigation -->
-                <div class="col-lg-3 col-md-4">
-                    <div class="settings-sidebar bg-white rounded shadow-sm p-3 sticky-top">
-                        <h5 class="mb-3">Cài đặt</h5>
+                <!-- Settings Sidebar -->
+                <div class="col-lg-3">
+                    <div class="settings-sidebar">
+                        <h5 class="sidebar-title">Cài đặt</h5>
                         <nav class="nav nav-pills flex-column">
-                            <a
-                                v-for="section in sections"
-                                :key="section.key"
-                                :class="['nav-link', { active: activeSection === section.key }]"
-                                href="#"
-                                @click.prevent="setActiveSection(section.key)"
-                            >
+                            <button v-for="section in settingSections" :key="section.id" class="nav-link"
+                                :class="{ active: activeSection === section.id }" @click="setActiveSection(section.id)">
                                 <i :class="section.icon" class="me-2"></i>
                                 {{ section.title }}
                                 <span v-if="section.badge" class="badge bg-danger ms-auto">{{ section.badge }}</span>
-                            </a>
+                            </button>
                         </nav>
                     </div>
                 </div>
 
-                <!-- Main Content -->
-                <div class="col-lg-9 col-md-8">
+                <!-- Settings Content -->
+                <div class="col-lg-9">
                     <div class="settings-content">
                         <!-- Profile Settings -->
-                        <div v-show="activeSection === 'profile'" class="settings-section">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Thông tin cá nhân</h5>
-                                </div>
-                                <div class="card-body">
-                                    <form @submit.prevent="updateProfile">
-                                        <div class="row">
-                                            <!-- Avatar Upload -->
-                                            <div class="col-md-4 text-center mb-4">
-                                                <div class="avatar-upload">
-                                                    <img
-                                                        :src="profileForm.avatar || '/default-avatar.png'"
-                                                        alt="Avatar"
-                                                        class="rounded-circle mb-3"
-                                                        width="120"
-                                                        height="120"
-                                                    >
-                                                    <div>
-                                                        <input
-                                                            ref="avatarInput"
-                                                            type="file"
-                                                            accept="image/*"
-                                                            class="d-none"
-                                                            @change="handleAvatarUpload"
-                                                        >
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-outline-primary btn-sm"
-                                                            @click="$refs.avatarInput.click()"
-                                                        >
-                                                            Thay đổi ảnh
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Profile Form -->
-                                            <div class="col-md-8">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Tên hiển thị</label>
-                                                        <input
-                                                            v-model="profileForm.displayName"
-                                                            type="text"
-                                                            class="form-control"
-                                                            required
-                                                        >
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Tên người dùng</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">@</span>
-                                                            <input
-                                                                v-model="profileForm.username"
-                                                                type="text"
-                                                                class="form-control"
-                                                                required
-                                                            >
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-12 mb-3">
-                                                        <label class="form-label">Email</label>
-                                                        <input
-                                                            v-model="profileForm.email"
-                                                            type="email"
-                                                            class="form-control"
-                                                            required
-                                                        >
-                                                    </div>
-                                                    <div class="col-12 mb-3">
-                                                        <label class="form-label">Tiểu sử</label>
-                                                        <textarea
-                                                            v-model="profileForm.bio"
-                                                            class="form-control"
-                                                            rows="3"
-                                                            maxlength="160"
-                                                        ></textarea>
-                                                        <div class="form-text">
-                                                            {{ profileForm.bio?.length || 0 }}/160 ký tự
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Số điện thoại</label>
-                                                        <input
-                                                            v-model="profileForm.phone"
-                                                            type="tel"
-                                                            class="form-control"
-                                                        >
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Ngày sinh</label>
-                                                        <input
-                                                            v-model="profileForm.birthDate"
-                                                            type="date"
-                                                            class="form-control"
-                                                        >
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex justify-content-end">
-                                            <button
-                                                type="submit"
-                                                class="btn btn-primary"
-                                                :disabled="isUpdating"
-                                            >
-                                                <i v-if="isUpdating" class="fas fa-spinner fa-spin me-2"></i>
-                                                {{ isUpdating ? 'Đang cập nhật...' : 'Lưu thay đổi' }}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
+                        <div v-if="activeSection === 'profile'" class="settings-section">
+                            <div class="section-header">
+                                <h4>Thông tin cá nhân</h4>
+                                <p class="text-muted">Quản lý thông tin hồ sơ của bạn</p>
                             </div>
+
+                            <form @submit.prevent="saveProfile">
+                                <!-- Avatar Upload -->
+                                <div class="avatar-upload mb-4">
+                                    <div class="avatar-preview">
+                                        <UserAvatar :user="currentUser" :size="100" />
+                                        <button type="button" class="avatar-edit-btn" @click="uploadAvatar">
+                                            <i class="fas fa-camera"></i>
+                                        </button>
+                                    </div>
+                                    <div class="avatar-info">
+                                        <h6>Ảnh đại diện</h6>
+                                        <p class="text-muted">JPG, PNG. Tối đa 5MB</p>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Họ *</label>
+                                            <input v-model="profileForm.firstName" type="text" class="form-control"
+                                                required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Tên *</label>
+                                            <input v-model="profileForm.lastName" type="text" class="form-control"
+                                                required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Tên người dùng *</label>
+                                    <input v-model="profileForm.username" type="text" class="form-control" required>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Email *</label>
+                                    <input v-model="profileForm.email" type="email" class="form-control" required>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Tiểu sử</label>
+                                    <textarea v-model="profileForm.bio" class="form-control" rows="3" maxlength="160"
+                                        placeholder="Viết vài dòng về bản thân..."></textarea>
+                                    <small class="form-text text-muted">
+                                        {{ profileForm.bio?.length || 0 }}/160 ký tự
+                                    </small>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label class="form-label">Số điện thoại</label>
+                                    <input v-model="profileForm.phone" type="tel" class="form-control">
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" :disabled="loading.profile">
+                                    <i v-if="loading.profile" class="fas fa-spinner fa-spin me-2"></i>
+                                    Lưu thay đổi
+                                </button>
+                            </form>
                         </div>
 
                         <!-- Privacy Settings -->
-                        <div v-show="activeSection === 'privacy'" class="settings-section">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Cài đặt riêng tư</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="privacy-settings">
-                                        <div class="setting-item d-flex justify-content-between align-items-center py-3 border-bottom">
-                                            <div>
-                                                <strong>Tài khoản riêng tư</strong>
-                                                <div class="text-muted small">Chỉ những người theo dõi mới có thể xem bài viết của bạn</div>
-                                            </div>
-                                            <div class="form-check form-switch">
-                                                <input
-                                                    v-model="privacySettings.isPrivate"
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    @change="updatePrivacySetting('isPrivate', $event.target.checked)"
-                                                >
-                                            </div>
-                                        </div>
+                        <div v-if="activeSection === 'privacy'" class="settings-section">
+                            <div class="section-header">
+                                <h4>Quyền riêng tư</h4>
+                                <p class="text-muted">Kiểm soát ai có thể xem thông tin của bạn</p>
+                            </div>
 
-                                        <div class="setting-item d-flex justify-content-between align-items-center py-3 border-bottom">
-                                            <div>
-                                                <strong>Hiển thị trạng thái online</strong>
-                                                <div class="text-muted small">Cho phép người khác biết bạn đang online</div>
-                                            </div>
-                                            <div class="form-check form-switch">
-                                                <input
-                                                    v-model="privacySettings.showOnlineStatus"
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    @change="updatePrivacySetting('showOnlineStatus', $event.target.checked)"
-                                                >
-                                            </div>
-                                        </div>
-
-                                        <div class="setting-item d-flex justify-content-between align-items-center py-3 border-bottom">
-                                            <div>
-                                                <strong>Cho phép tìm kiếm bằng email</strong>
-                                                <div class="text-muted small">Người khác có thể tìm thấy bạn qua email</div>
-                                            </div>
-                                            <div class="form-check form-switch">
-                                                <input
-                                                    v-model="privacySettings.searchableByEmail"
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    @change="updatePrivacySetting('searchableByEmail', $event.target.checked)"
-                                                >
-                                            </div>
-                                        </div>
-
-                                        <div class="setting-item d-flex justify-content-between align-items-center py-3">
-                                            <div>
-                                                <strong>Cho phép nhắn tin từ người lạ</strong>
-                                                <div class="text-muted small">Người không theo dõi bạn có thể gửi tin nhắn</div>
-                                            </div>
-                                            <div class="form-check form-switch">
-                                                <input
-                                                    v-model="privacySettings.allowMessagesFromStrangers"
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    @change="updatePrivacySetting('allowMessagesFromStrangers', $event.target.checked)"
-                                                >
-                                            </div>
-                                        </div>
+                            <form @submit.prevent="savePrivacy">
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Tài khoản riêng tư</h6>
+                                        <p class="text-muted">Chỉ những người theo dõi mới có thể xem bài viết của bạn
+                                        </p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="privacyForm.isPrivate" type="checkbox" class="form-check-input">
                                     </div>
                                 </div>
-                            </div>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Hiển thị trạng thái online</h6>
+                                        <p class="text-muted">Cho phép người khác biết khi bạn đang online</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="privacyForm.showOnlineStatus" type="checkbox"
+                                            class="form-check-input">
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Cho phép tìm kiếm bằng email</h6>
+                                        <p class="text-muted">Người khác có thể tìm thấy bạn qua địa chỉ email</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="privacyForm.searchableByEmail" type="checkbox"
+                                            class="form-check-input">
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Cho phép tin nhắn từ người lạ</h6>
+                                        <p class="text-muted">Nhận tin nhắn từ những người không theo dõi bạn</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="privacyForm.allowMessagesFromStrangers" type="checkbox"
+                                            class="form-check-input">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" :disabled="loading.privacy">
+                                    <i v-if="loading.privacy" class="fas fa-spinner fa-spin me-2"></i>
+                                    Lưu thay đổi
+                                </button>
+                            </form>
                         </div>
 
                         <!-- Notification Settings -->
-                        <div v-show="activeSection === 'notifications'" class="settings-section">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Cài đặt thông báo</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="notification-settings">
-                                        <h6>Thông báo Push</h6>
-                                        <div class="setting-group mb-4">
-                                            <div v-for="notification in notificationTypes" :key="notification.key" 
-                                                 class="setting-item d-flex justify-content-between align-items-center py-2">
-                                                <div>
-                                                    <strong>{{ notification.title }}</strong>
-                                                    <div class="text-muted small">{{ notification.description }}</div>
-                                                </div>
-                                                <div class="form-check form-switch">
-                                                    <input
-                                                        v-model="notificationSettings[notification.key]"
-                                                        class="form-check-input"
-                                                        type="checkbox"
-                                                        @change="updateNotificationSetting(notification.key, $event.target.checked)"
-                                                    >
-                                                </div>
-                                            </div>
-                                        </div>
+                        <div v-if="activeSection === 'notifications'" class="settings-section">
+                            <div class="section-header">
+                                <h4>Thông báo</h4>
+                                <p class="text-muted">Chọn loại thông báo bạn muốn nhận</p>
+                            </div>
 
-                                        <h6>Thông báo Email</h6>
-                                        <div class="setting-group">
-                                            <div v-for="email in emailNotificationTypes" :key="email.key" 
-                                                 class="setting-item d-flex justify-content-between align-items-center py-2">
-                                                <div>
-                                                    <strong>{{ email.title }}</strong>
-                                                    <div class="text-muted small">{{ email.description }}</div>
-                                                </div>
-                                                <div class="form-check form-switch">
-                                                    <input
-                                                        v-model="emailSettings[email.key]"
-                                                        class="form-check-input"
-                                                        type="checkbox"
-                                                        @change="updateEmailSetting(email.key, $event.target.checked)"
-                                                    >
-                                                </div>
-                                            </div>
-                                        </div>
+                            <form @submit.prevent="saveNotifications">
+                                <h6 class="subsection-title">Thông báo ứng dụng</h6>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Lượt thích</h6>
+                                        <p class="text-muted">Khi có người thích bài viết của bạn</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="notificationForm.likes" type="checkbox"
+                                            class="form-check-input">
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- Appearance Settings -->
-                        <div v-show="activeSection === 'appearance'" class="settings-section">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Giao diện</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="appearance-settings">
-                                        <div class="mb-4">
-                                            <label class="form-label">Chủ đề</label>
-                                            <div class="theme-selector d-flex gap-3">
-                                                <div
-                                                    v-for="theme in themes"
-                                                    :key="theme.value"
-                                                    :class="['theme-option', { active: appearanceSettings.theme === theme.value }]"
-                                                    @click="changeTheme(theme.value)"
-                                                >
-                                                    <div :class="['theme-preview', theme.value]"></div>
-                                                    <span class="theme-name">{{ theme.label }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-4">
-                                            <label class="form-label">Kích thước chữ</label>
-                                            <select
-                                                v-model="appearanceSettings.fontSize"
-                                                class="form-select"
-                                                @change="updateAppearanceSetting('fontSize', $event.target.value)"
-                                            >
-                                                <option value="small">Nhỏ</option>
-                                                <option value="medium">Trung bình</option>
-                                                <option value="large">Lớn</option>
-                                            </select>
-                                        </div>
-
-                                        <div class="setting-item d-flex justify-content-between align-items-center py-3">
-                                            <div>
-                                                <strong>Chế độ nén dữ liệu</strong>
-                                                <div class="text-muted small">Giảm dung lượng tải xuống</div>
-                                            </div>
-                                            <div class="form-check form-switch">
-                                                <input
-                                                    v-model="appearanceSettings.dataSaver"
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    @change="updateAppearanceSetting('dataSaver', $event.target.checked)"
-                                                >
-                                            </div>
-                                        </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Bình luận</h6>
+                                        <p class="text-muted">Khi có người bình luận bài viết của bạn</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="notificationForm.comments" type="checkbox"
+                                            class="form-check-input">
                                     </div>
                                 </div>
-                            </div>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Người theo dõi mới</h6>
+                                        <p class="text-muted">Khi có người bắt đầu theo dõi bạn</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="notificationForm.follows" type="checkbox"
+                                            class="form-check-input">
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Tin nhắn</h6>
+                                        <p class="text-muted">Khi có tin nhắn mới</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="notificationForm.messages" type="checkbox"
+                                            class="form-check-input">
+                                    </div>
+                                </div>
+
+                                <h6 class="subsection-title mt-4">Thông báo email</h6>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Bản tin hàng tuần</h6>
+                                        <p class="text-muted">Nhận tóm tắt hoạt động hàng tuần</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="emailForm.weeklyDigest" type="checkbox"
+                                            class="form-check-input">
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Người theo dõi mới</h6>
+                                        <p class="text-muted">Email khi có người theo dõi mới</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="emailForm.newFollowers" type="checkbox"
+                                            class="form-check-input">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" :disabled="loading.notifications">
+                                    <i v-if="loading.notifications" class="fas fa-spinner fa-spin me-2"></i>
+                                    Lưu thay đổi
+                                </button>
+                            </form>
                         </div>
 
                         <!-- Security Settings -->
-                        <div v-show="activeSection === 'security'" class="settings-section">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Bảo mật</h5>
+                        <div v-if="activeSection === 'security'" class="settings-section">
+                            <div class="section-header">
+                                <h4>Bảo mật</h4>
+                                <p class="text-muted">Quản lý bảo mật tài khoản của bạn</p>
+                            </div>
+
+                            <!-- Change Password -->
+                            <div class="security-subsection">
+                                <h6>Đổi mật khẩu</h6>
+                                <form @submit.prevent="changePassword">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Mật khẩu hiện tại</label>
+                                        <input v-model="passwordForm.currentPassword" type="password"
+                                            class="form-control" required>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Mật khẩu mới</label>
+                                        <input v-model="passwordForm.newPassword" type="password" class="form-control"
+                                            minlength="8" required>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Xác nhận mật khẩu mới</label>
+                                        <input v-model="passwordForm.confirmPassword" type="password"
+                                            class="form-control" required>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary" :disabled="loading.password">
+                                        <i v-if="loading.password" class="fas fa-spinner fa-spin me-2"></i>
+                                        Đổi mật khẩu
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Two Factor Authentication -->
+                            <div class="security-subsection">
+                                <h6>Xác thực hai yếu tố</h6>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h6>Bật xác thực hai yếu tố</h6>
+                                        <p class="text-muted">Thêm một lớp bảo mật cho tài khoản của bạn</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input v-model="securityForm.twoFactorEnabled" type="checkbox"
+                                            class="form-check-input" @change="toggleTwoFactor">
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <div class="security-settings">
-                                        <!-- Change Password -->
-                                        <div class="mb-4">
-                                            <h6>Thay đổi mật khẩu</h6>
-                                            <form @submit.prevent="changePassword">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Mật khẩu hiện tại</label>
-                                                        <input
-                                                            v-model="passwordForm.currentPassword"
-                                                            type="password"
-                                                            class="form-control"
-                                                            required
-                                                        >
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Mật khẩu mới</label>
-                                                        <input
-                                                            v-model="passwordForm.newPassword"
-                                                            type="password"
-                                                            class="form-control"
-                                                            required
-                                                        >
-                                                    </div>
-                                                    <div class="col-12 mb-3">
-                                                        <button type="submit" class="btn btn-primary">
-                                                            Thay đổi mật khẩu
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
+                            </div>
 
-                                        <!-- Two Factor Authentication -->
-                                        <div class="mb-4">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6>Xác thực hai yếu tố</h6>
-                                                    <small class="text-muted">Bảo vệ tài khoản với lớp bảo mật bổ sung</small>
-                                                </div>
-                                                <button
-                                                    class="btn btn-outline-primary"
-                                                    @click="toggle2FA"
-                                                >
-                                                    {{ securitySettings.twoFactorEnabled ? 'Tắt' : 'Bật' }}
-                                                </button>
+                            <!-- Active Sessions -->
+                            <div class="security-subsection">
+                                <h6>Phiên đăng nhập</h6>
+                                <div class="sessions-list">
+                                    <div v-for="session in activeSessions" :key="session.id" class="session-item">
+                                        <div class="session-info">
+                                            <div class="session-device">
+                                                <i :class="getDeviceIcon(session.device)" class="me-2"></i>
+                                                {{ session.device }} - {{ session.browser }}
+                                            </div>
+                                            <div class="session-meta">
+                                                <span class="session-location">{{ session.location }}</span>
+                                                <span class="session-time">{{ formatDate(session.lastActive) }}</span>
                                             </div>
                                         </div>
-
-                                        <!-- Active Sessions -->
-                                        <div>
-                                            <h6>Phiên đăng nhập</h6>
-                                            <div class="sessions-list">
-                                                <div v-for="session in activeSessions" :key="session.id"
-                                                     class="session-item d-flex justify-content-between align-items-center py-3 border-bottom">
-                                                    <div>
-                                                        <strong>{{ session.device }}</strong>
-                                                        <div class="text-muted small">
-                                                            {{ session.location }} • {{ formatDate(session.lastActive) }}
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        v-if="!session.current"
-                                                        class="btn btn-outline-danger btn-sm"
-                                                        @click="terminateSession(session.id)"
-                                                    >
-                                                        Kết thúc
-                                                    </button>
-                                                    <span v-else class="badge bg-success">Hiện tại</span>
-                                                </div>
-                                            </div>
+                                        <div class="session-actions">
+                                            <span v-if="session.isCurrent" class="badge bg-success">Hiện tại</span>
+                                            <button v-else class="btn btn-sm btn-outline-danger"
+                                                @click="terminateSession(session.id)">
+                                                Đăng xuất
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -412,359 +319,488 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useToast } from 'vue-toastification'
-import { useAuthStore } from '@/stores/auth'
-import { formatDate } from '@/filters/dateFilter'
+import { useAppStores } from '@/composables/useAppStores'
+import { useLoadingStates } from '@/composables/useLoadingStates'
+import { formatDate } from '@/utils/stringUtils'
+import UserAvatar from '@/components/user/UserAvatar.vue'
 
-// Composables
 const toast = useToast()
-const authStore = useAuthStore()
+const { authStore } = useAppStores()
+const { loading, setLoading } = useLoadingStates(['profile', 'privacy', 'notifications', 'password'])
 
-// Reactive data
+// State
 const activeSection = ref('profile')
-const isUpdating = ref(false)
+const activeSessions = ref([])
 
-// Settings data
+// Form data
 const profileForm = reactive({
-    displayName: '',
+    firstName: '',
+    lastName: '',
     username: '',
     email: '',
     bio: '',
-    phone: '',
-    birthDate: '',
-    avatar: ''
+    phone: ''
 })
 
-const privacySettings = reactive({
+const privacyForm = reactive({
     isPrivate: false,
     showOnlineStatus: true,
     searchableByEmail: true,
     allowMessagesFromStrangers: false
 })
 
-const notificationSettings = reactive({
+const notificationForm = reactive({
     likes: true,
     comments: true,
     follows: true,
-    mentions: true,
     messages: true
 })
 
-const emailSettings = reactive({
+const emailForm = reactive({
     weeklyDigest: true,
-    newFollowers: false,
-    marketingEmails: false
+    newFollowers: false
 })
 
-const appearanceSettings = reactive({
-    theme: 'auto',
-    fontSize: 'medium',
-    dataSaver: false
-})
-
-const securitySettings = reactive({
+const securityForm = reactive({
     twoFactorEnabled: false
 })
 
 const passwordForm = reactive({
     currentPassword: '',
-    newPassword: ''
+    newPassword: '',
+    confirmPassword: ''
 })
 
-const activeSessions = ref([])
+// Computed
+const currentUser = computed(() => authStore.user)
 
-// Static data
-const sections = [
-    { key: 'profile', title: 'Hồ sơ cá nhân', icon: 'fas fa-user' },
-    { key: 'privacy', title: 'Riêng tư', icon: 'fas fa-shield-alt' },
-    { key: 'notifications', title: 'Thông báo', icon: 'fas fa-bell' },
-    { key: 'appearance', title: 'Giao diện', icon: 'fas fa-palette' },
-    { key: 'security', title: 'Bảo mật', icon: 'fas fa-lock' }
-]
-
-const themes = [
-    { value: 'light', label: 'Sáng' },
-    { value: 'dark', label: 'Tối' },
-    { value: 'auto', label: 'Tự động' }
-]
-
-const notificationTypes = [
-    { key: 'likes', title: 'Lượt thích', description: 'Khi ai đó thích bài viết của bạn' },
-    { key: 'comments', title: 'Bình luận', description: 'Khi ai đó bình luận bài viết của bạn' },
-    { key: 'follows', title: 'Theo dõi', description: 'Khi ai đó theo dõi bạn' },
-    { key: 'mentions', title: 'Nhắc đến', description: 'Khi ai đó nhắc đến bạn' },
-    { key: 'messages', title: 'Tin nhắn', description: 'Khi có tin nhắn mới' }
-]
-
-const emailNotificationTypes = [
-    { key: 'weeklyDigest', title: 'Tóm tắt hàng tuần', description: 'Nhận tóm tắt hoạt động qua email' },
-    { key: 'newFollowers', title: 'Người theo dõi mới', description: 'Thông báo qua email về người theo dõi mới' },
-    { key: 'marketingEmails', title: 'Email tiếp thị', description: 'Nhận thông tin về tính năng mới' }
-]
+const settingSections = computed(() => [
+    {
+        id: 'profile',
+        title: 'Hồ sơ',
+        icon: 'fas fa-user'
+    },
+    {
+        id: 'privacy',
+        title: 'Quyền riêng tư',
+        icon: 'fas fa-shield-alt'
+    },
+    {
+        id: 'notifications',
+        title: 'Thông báo',
+        icon: 'fas fa-bell'
+    },
+    {
+        id: 'security',
+        title: 'Bảo mật',
+        icon: 'fas fa-lock',
+        badge: !securityForm.twoFactorEnabled ? '!' : null
+    }
+])
 
 // Methods
 const setActiveSection = (section) => {
     activeSection.value = section
 }
 
-const updateProfile = async () => {
-    try {
-        isUpdating.value = true
-        
-        // TODO: Call API to update profile
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-        
-        toast.success('Cập nhật thông tin thành công!')
-    } catch (error) {
-        console.error('Update profile error:', error)
-        toast.error('Có lỗi xảy ra khi cập nhật thông tin')
-    } finally {
-        isUpdating.value = false
-    }
+const uploadAvatar = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = handleAvatarUpload
+    input.click()
 }
 
-const handleAvatarUpload = (event) => {
+const handleAvatarUpload = async (event) => {
     const file = event.target.files[0]
-    if (file) {
-        // TODO: Upload avatar and update profileForm.avatar
-        const reader = new FileReader()
-        reader.onload = (e) => {
-            profileForm.avatar = e.target.result
-        }
-        reader.readAsDataURL(file)
-    }
-}
+    if (!file) return
 
-const updatePrivacySetting = async (key, value) => {
+    if (file.size > 5 * 1024 * 1024) {
+        toast.error('Kích thước file không được vượt quá 5MB')
+        return
+    }
+
     try {
-        // TODO: Call API to update privacy setting
-        toast.success('Cập nhật cài đặt thành công!')
+        const formData = new FormData()
+        formData.append('avatar', file)
+
+        await authStore.uploadAvatar(formData)
+        toast.success('Cập nhật ảnh đại diện thành công!')
+
     } catch (error) {
-        console.error('Update privacy setting error:', error)
-        toast.error('Có lỗi xảy ra')
-        // Revert the change
-        privacySettings[key] = !value
+        console.error('Avatar upload error:', error)
+        toast.error('Upload ảnh thất bại. Vui lòng thử lại.')
     }
 }
 
-const updateNotificationSetting = async (key, value) => {
+const saveProfile = async () => {
+    setLoading('profile', true)
     try {
-        // TODO: Call API to update notification setting
+        await authStore.updateProfile(profileForm)
+        toast.success('Cập nhật hồ sơ thành công!')
+    } catch (error) {
+        console.error('Save profile error:', error)
+        toast.error('Cập nhật hồ sơ thất bại')
+    } finally {
+        setLoading('profile', false)
+    }
+}
+
+const savePrivacy = async () => {
+    setLoading('privacy', true)
+    try {
+        await authStore.updatePrivacySettings(privacyForm)
+        toast.success('Cập nhật cài đặt riêng tư thành công!')
+    } catch (error) {
+        console.error('Save privacy error:', error)
+        toast.error('Cập nhật cài đặt thất bại')
+    } finally {
+        setLoading('privacy', false)
+    }
+}
+
+const saveNotifications = async () => {
+    setLoading('notifications', true)
+    try {
+        await authStore.updateNotificationSettings({
+            ...notificationForm,
+            email: emailForm
+        })
         toast.success('Cập nhật cài đặt thông báo thành công!')
     } catch (error) {
-        console.error('Update notification setting error:', error)
-        toast.error('Có lỗi xảy ra')
-        notificationSettings[key] = !value
-    }
-}
-
-const updateEmailSetting = async (key, value) => {
-    try {
-        // TODO: Call API to update email setting
-        toast.success('Cập nhật cài đặt email thành công!')
-    } catch (error) {
-        console.error('Update email setting error:', error)
-        toast.error('Có lỗi xảy ra')
-        emailSettings[key] = !value
-    }
-}
-
-const changeTheme = async (theme) => {
-    try {
-        appearanceSettings.theme = theme
-        // TODO: Apply theme to UI
-        document.documentElement.setAttribute('data-theme', theme)
-        toast.success('Thay đổi chủ đề thành công!')
-    } catch (error) {
-        console.error('Change theme error:', error)
-        toast.error('Có lỗi xảy ra')
-    }
-}
-
-const updateAppearanceSetting = async (key, value) => {
-    try {
-        // TODO: Call API to update appearance setting
-        toast.success('Cập nhật giao diện thành công!')
-    } catch (error) {
-        console.error('Update appearance setting error:', error)
-        toast.error('Có lỗi xảy ra')
+        console.error('Save notifications error:', error)
+        toast.error('Cập nhật cài đặt thất bại')
+    } finally {
+        setLoading('notifications', false)
     }
 }
 
 const changePassword = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+        toast.error('Mật khẩu xác nhận không khớp')
+        return
+    }
+
+    setLoading('password', true)
     try {
-        // TODO: Call API to change password
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        passwordForm.currentPassword = ''
-        passwordForm.newPassword = ''
-        toast.success('Thay đổi mật khẩu thành công!')
+        await authStore.changePassword({
+            currentPassword: passwordForm.currentPassword,
+            newPassword: passwordForm.newPassword
+        })
+
+        // Reset form
+        Object.keys(passwordForm).forEach(key => {
+            passwordForm[key] = ''
+        })
+
+        toast.success('Đổi mật khẩu thành công!')
     } catch (error) {
         console.error('Change password error:', error)
-        toast.error('Có lỗi xảy ra khi thay đổi mật khẩu')
+        toast.error('Đổi mật khẩu thất bại')
+    } finally {
+        setLoading('password', false)
     }
 }
 
-const toggle2FA = async () => {
+const toggleTwoFactor = async () => {
     try {
-        // TODO: Implement 2FA toggle
-        securitySettings.twoFactorEnabled = !securitySettings.twoFactorEnabled
-        toast.success(`${securitySettings.twoFactorEnabled ? 'Bật' : 'Tắt'} xác thực hai yếu tố thành công!`)
+        if (securityForm.twoFactorEnabled) {
+            await authStore.enableTwoFactor()
+            toast.success('Đã bật xác thực hai yếu tố')
+        } else {
+            await authStore.disableTwoFactor()
+            toast.success('Đã tắt xác thực hai yếu tố')
+        }
     } catch (error) {
         console.error('Toggle 2FA error:', error)
+        securityForm.twoFactorEnabled = !securityForm.twoFactorEnabled // Revert
         toast.error('Có lỗi xảy ra')
+    }
+}
+
+const loadActiveSessions = async () => {
+    try {
+        const response = await authStore.getActiveSessions()
+        activeSessions.value = response.data
+    } catch (error) {
+        console.error('Load sessions error:', error)
     }
 }
 
 const terminateSession = async (sessionId) => {
     try {
-        // TODO: Call API to terminate session
+        await authStore.terminateSession(sessionId)
         activeSessions.value = activeSessions.value.filter(s => s.id !== sessionId)
-        toast.success('Kết thúc phiên đăng nhập thành công!')
+        toast.success('Đã đăng xuất phiên')
     } catch (error) {
         console.error('Terminate session error:', error)
-        toast.error('Có lỗi xảy ra')
+        toast.error('Không thể đăng xuất phiên')
+    }
+}
+
+const getDeviceIcon = (device) => {
+    if (device.includes('Mobile')) return 'fas fa-mobile-alt'
+    if (device.includes('Tablet')) return 'fas fa-tablet-alt'
+    return 'fas fa-desktop'
+}
+
+const loadUserSettings = async () => {
+    try {
+        const user = currentUser.value
+        if (user) {
+            // Load profile data
+            Object.assign(profileForm, {
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                username: user.username || '',
+                email: user.email || '',
+                bio: user.bio || '',
+                phone: user.phone || ''
+            })
+        }
+
+        // Load other settings from API
+        const [privacySettings, notificationSettings, securitySettings] = await Promise.all([
+            authStore.getPrivacySettings(),
+            authStore.getNotificationSettings(),
+            authStore.getSecuritySettings()
+        ])
+
+        Object.assign(privacyForm, privacySettings)
+        Object.assign(notificationForm, notificationSettings.app)
+        Object.assign(emailForm, notificationSettings.email)
+        Object.assign(securityForm, securitySettings)
+
+    } catch (error) {
+        console.error('Load settings error:', error)
     }
 }
 
 // Lifecycle
 onMounted(async () => {
-    try {
-        // Load user settings
-        // TODO: Replace with actual API calls
-        const user = authStore.user
-        if (user) {
-            Object.assign(profileForm, {
-                displayName: user.displayName || '',
-                username: user.username || '',
-                email: user.email || '',
-                bio: user.bio || '',
-                phone: user.phone || '',
-                birthDate: user.birthDate || '',
-                avatar: user.avatar || ''
-            })
-        }
-
-        // Load active sessions
-        activeSessions.value = [
-            {
-                id: '1',
-                device: 'Chrome on Windows',
-                location: 'Hà Nội, Việt Nam',
-                lastActive: new Date(),
-                current: true
-            },
-            {
-                id: '2',
-                device: 'Mobile App',
-                location: 'TP. Hồ Chí Minh, Việt Nam',
-                lastActive: new Date(Date.now() - 3600000), // 1 hour ago
-                current: false
-            }
-        ]
-    } catch (error) {
-        console.error('Load settings error:', error)
-        toast.error('Có lỗi xảy ra khi tải cài đặt')
-    }
+    await Promise.all([
+        loadUserSettings(),
+        loadActiveSessions()
+    ])
 })
 </script>
 
 <style lang="scss" scoped>
 .settings-view {
     min-height: 100vh;
-    background-color: #f8f9fa;
+    background: #f8f9fa;
     padding: 2rem 0;
+}
 
-    .settings-sidebar {
-        top: 2rem;
-        
+.settings-sidebar {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    position: sticky;
+    top: 2rem;
+
+    .sidebar-title {
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .nav-pills {
         .nav-link {
             color: #6c757d;
-            border: none;
             border-radius: 0.5rem;
             margin-bottom: 0.25rem;
-            
+            padding: 0.75rem 1rem;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+
             &:hover {
-                background-color: #f8f9fa;
-                color: #0d6efd;
+                background: #f8f9fa;
+                color: #495057;
             }
-            
+
             &.active {
-                background-color: #0d6efd;
+                background: #007bff;
                 color: white;
+            }
+
+            i {
+                width: 20px;
+            }
+        }
+    }
+}
+
+.settings-content {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+}
+
+.section-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+
+    h4 {
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+}
+
+.avatar-upload {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .avatar-preview {
+        position: relative;
+
+        .avatar-edit-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #007bff;
+            color: white;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+
+            &:hover {
+                background: #0056b3;
             }
         }
     }
 
-    .settings-content {
-        .card {
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+    .avatar-info {
+        h6 {
+            margin-bottom: 0.25rem;
         }
 
-        .setting-item {
-            &:last-child {
-                border-bottom: none !important;
+        p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+    }
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f8f9fa;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    .setting-info {
+        flex: 1;
+
+        h6 {
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    }
+
+    .form-check-input {
+        margin: 0;
+    }
+}
+
+.subsection-title {
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f8f9fa;
+    font-weight: 600;
+}
+
+.security-subsection {
+    margin-bottom: 3rem;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    h6 {
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+}
+
+.sessions-list {
+    .session-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        margin-bottom: 0.75rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        .session-info {
+            flex: 1;
+
+            .session-device {
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+            }
+
+            .session-meta {
+                display: flex;
+                gap: 1rem;
+                color: #6c757d;
+                font-size: 0.9rem;
             }
         }
 
-        .theme-selector {
-            .theme-option {
-                cursor: pointer;
-                text-align: center;
-                padding: 1rem;
-                border: 2px solid transparent;
-                border-radius: 0.5rem;
-                transition: all 0.2s ease;
-
-                &:hover {
-                    border-color: #dee2e6;
-                }
-
-                &.active {
-                    border-color: #0d6efd;
-                }
-
-                .theme-preview {
-                    width: 60px;
-                    height: 40px;
-                    border-radius: 0.25rem;
-                    margin: 0 auto 0.5rem;
-
-                    &.light {
-                        background: linear-gradient(135deg, #ffffff 50%, #f8f9fa 50%);
-                        border: 1px solid #dee2e6;
-                    }
-
-                    &.dark {
-                        background: linear-gradient(135deg, #212529 50%, #343a40 50%);
-                    }
-
-                    &.auto {
-                        background: linear-gradient(135deg, #ffffff 50%, #212529 50%);
-                        border: 1px solid #dee2e6;
-                    }
-                }
-
-                .theme-name {
-                    font-size: 0.875rem;
-                    color: #6c757d;
-                }
-            }
+        .session-actions {
+            display: flex;
+            align-items: center;
         }
+    }
+}
 
-        .avatar-upload {
-            img {
-                border: 3px solid #fff;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-        }
+@media (max-width: 992px) {
+    .settings-sidebar {
+        position: static;
+        margin-bottom: 2rem;
 
-        .sessions-list {
-            .session-item:last-child {
-                border-bottom: none !important;
+        .nav-pills {
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 0.5rem;
+
+            .nav-link {
+                white-space: nowrap;
+                margin-bottom: 0;
             }
         }
     }
@@ -772,29 +808,28 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
     .settings-view {
-        .settings-sidebar {
-            position: static !important;
-            margin-bottom: 2rem;
-            
-            .nav {
-                flex-direction: row;
-                overflow-x: auto;
-                
-                .nav-link {
-                    white-space: nowrap;
-                    margin-right: 0.5rem;
-                    margin-bottom: 0;
-                }
-            }
-        }
+        padding: 1rem 0;
+    }
 
-        .theme-selector {
-            flex-direction: column;
-            
-            .theme-option {
-                width: 100%;
-            }
-        }
+    .settings-content {
+        padding: 1.5rem;
+    }
+
+    .avatar-upload {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .setting-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .session-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
     }
 }
 </style>
