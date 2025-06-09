@@ -13,14 +13,14 @@
                                 <button class="btn btn-ghost back-btn" @click="goBack">
                                     <i class="fas fa-arrow-left"></i>
                                 </button>
-                                
+
                                 <div class="conversation-info" @click="toggleSidebar">
-                                    <UserAvatar v-if="!conversation.isGroupChat" 
-                                                :user="getOtherParticipant()" size="lg" class="conversation-avatar" />
+                                    <UserAvatar v-if="!conversation.isGroupChat" :user="getOtherParticipant()" size="lg"
+                                        class="conversation-avatar" />
                                     <div v-else class="group-avatar">
                                         <i class="fas fa-users"></i>
                                     </div>
-                                    
+
                                     <div class="conversation-details">
                                         <h4 class="conversation-title">{{ getConversationTitle() }}</h4>
                                         <div class="conversation-status">
@@ -34,8 +34,8 @@
                                                 </span>
                                             </span>
                                             <div v-if="typingUsers.length > 0" class="typing-indicator">
-                                                <TypingIndicator :typing-users="typingUsers" 
-                                                                 :conversation-id="conversationId" compact />
+                                                <TypingIndicator :typing-users="typingUsers"
+                                                    :conversation-id="conversationId" compact />
                                             </div>
                                         </div>
                                     </div>
@@ -53,23 +53,27 @@
                                     <i class="fas fa-video"></i>
                                 </button>
                                 <div class="dropdown">
-                                    <button class="btn btn-ghost dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <button class="btn btn-ghost dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="#" @click="viewProfile">
-                                            <i class="fas fa-user me-2"></i>Xem hồ sơ</a></li>
+                                                <i class="fas fa-user me-2"></i>Xem hồ sơ</a></li>
                                         <li><a class="dropdown-item" href="#" @click="searchInConversation">
-                                            <i class="fas fa-search me-2"></i>Tìm kiếm tin nhắn</a></li>
+                                                <i class="fas fa-search me-2"></i>Tìm kiếm tin nhắn</a></li>
                                         <li><a class="dropdown-item" href="#" @click="viewSharedMedia">
-                                            <i class="fas fa-images me-2"></i>Ảnh & Video</a></li>
-                                        <li><hr class="dropdown-divider"></li>
+                                                <i class="fas fa-images me-2"></i>Ảnh & Video</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
                                         <li><a class="dropdown-item" href="#" @click="muteConversation">
-                                            <i class="fas fa-bell-slash me-2"></i>Tắt thông báo</a></li>
-                                        <li><a class="dropdown-item" href="#" @click="blockUser" v-if="!conversation.isGroupChat">
-                                            <i class="fas fa-ban me-2"></i>Chặn người dùng</a></li>
+                                                <i class="fas fa-bell-slash me-2"></i>Tắt thông báo</a></li>
+                                        <li><a class="dropdown-item" href="#" @click="blockUser"
+                                                v-if="!conversation.isGroupChat">
+                                                <i class="fas fa-ban me-2"></i>Chặn người dùng</a></li>
                                         <li><a class="dropdown-item text-danger" href="#" @click="deleteConversation">
-                                            <i class="fas fa-trash me-2"></i>Xóa cuộc trò chuyện</a></li>
+                                                <i class="fas fa-trash me-2"></i>Xóa cuộc trò chuyện</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -86,14 +90,15 @@
                                     </button>
                                 </div>
                                 <div class="search-items">
-                                    <div v-for="result in searchResults" :key="result.id" 
-                                         class="search-item" @click="jumpToMessage(result.id)">
+                                    <div v-for="result in searchResults" :key="result.id" class="search-item"
+                                        @click="jumpToMessage(result.id)">
                                         <div class="search-avatar">
                                             <UserAvatar :user="result.sender" size="sm" />
                                         </div>
                                         <div class="search-content">
                                             <div class="search-sender">{{ result.sender.name }}</div>
-                                            <div class="search-text" v-html="highlightSearchTerm(result.content, searchQuery)"></div>
+                                            <div class="search-text"
+                                                v-html="highlightSearchTerm(result.content, searchQuery)"></div>
                                             <div class="search-time">{{ formatTime(result.createdAt) }}</div>
                                         </div>
                                     </div>
@@ -109,7 +114,8 @@
                                 <div v-else class="messages-list">
                                     <!-- Load earlier messages -->
                                     <div v-if="hasEarlierMessages" class="load-earlier" @click="loadEarlierMessages">
-                                        <div v-if="isLoadingEarlier" class="spinner-border spinner-border-sm text-primary"></div>
+                                        <div v-if="isLoadingEarlier"
+                                            class="spinner-border spinner-border-sm text-primary"></div>
                                         <span v-else>
                                             <i class="fas fa-chevron-up me-2"></i>
                                             Tải tin nhắn cũ hơn
@@ -117,8 +123,8 @@
                                     </div>
 
                                     <!-- Message groups -->
-                                    <div v-for="(group, groupIndex) in messageGroups" :key="groupIndex" 
-                                         class="message-group">
+                                    <div v-for="(group, groupIndex) in messageGroups" :key="groupIndex"
+                                        class="message-group">
                                         <!-- Date separator -->
                                         <div v-if="group.showDate" class="date-separator">
                                             <span class="date-text">{{ formatMessageDate(group.date) }}</span>
@@ -126,42 +132,41 @@
 
                                         <!-- Messages in group -->
                                         <div class="group-messages">
-                                            <div v-for="(message, messageIndex) in group.messages" :key="message.id" 
-                                                 class="message-wrapper" :id="`message-${message.id}`"
-                                                 :class="{ 'highlighted': highlightedMessageId === message.id }">
-                                                
-                                                <MessageBubble :message="message" 
-                                                               :is-own="message.senderId === currentUser.id"
-                                                               :show-avatar="shouldShowAvatar(group, messageIndex)"
-                                                               :show-sender="shouldShowSender(group, messageIndex)"
-                                                               :show-time="shouldShowTime(group, messageIndex)"
-                                                               :is-last-in-group="messageIndex === group.messages.length - 1"
-                                                               @reply="replyToMessage"
-                                                               @edit="editMessage"
-                                                               @delete="deleteMessage"
-                                                               @react="reactToMessage"
-                                                               @forward="forwardMessage"
-                                                               @download="downloadFile"
-                                                               @view-media="viewMedia" />
+                                            <div v-for="(message, messageIndex) in group.messages" :key="message.id"
+                                                class="message-wrapper" :id="`message-${message.id}`"
+                                                :class="{ 'highlighted': highlightedMessageId === message.id }">
+
+                                                <MessageBubble :message="message"
+                                                    :is-own="message.senderId === currentUser.id"
+                                                    :show-avatar="shouldShowAvatar(group, messageIndex)"
+                                                    :show-sender="shouldShowSender(group, messageIndex)"
+                                                    :show-time="shouldShowTime(group, messageIndex)"
+                                                    :is-last-in-group="messageIndex === group.messages.length - 1"
+                                                    @reply="sendMessageReply" @edit="editMessage"
+                                                    @delete="deleteMessage" @react="reactToMessage"
+                                                    @forward="forwardMessage" @download="downloadFile"
+                                                    @view-media="viewMedia" />
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Typing indicator -->
                                     <div v-if="typingUsers.length > 0" class="typing-container">
-                                        <TypingIndicator :typing-users="typingUsers" 
-                                                         :conversation-id="conversationId" />
+                                        <TypingIndicator :typing-users="typingUsers"
+                                            :conversation-id="conversationId" />
                                     </div>
                                 </div>
 
                                 <!-- Scroll to bottom button -->
                                 <button v-if="showScrollToBottom" class="scroll-to-bottom" @click="scrollToBottom">
                                     <i class="fas fa-chevron-down"></i>
-                                    <span v-if="newMessagesCount > 0" class="new-messages-badge">{{ newMessagesCount }}</span>
+                                    <span v-if="newMessagesCount > 0" class="new-messages-badge">{{ newMessagesCount
+                                        }}</span>
                                 </button>
 
                                 <!-- Unread messages indicator -->
-                                <div v-if="unreadMessagesCount > 0" class="unread-indicator" @click="scrollToFirstUnread">
+                                <div v-if="unreadMessagesCount > 0" class="unread-indicator"
+                                    @click="scrollToFirstUnread">
                                     <span>{{ unreadMessagesCount }} tin nhắn chưa đọc</span>
                                     <i class="fas fa-chevron-down"></i>
                                 </div>
@@ -170,14 +175,10 @@
 
                         <!-- Message Input -->
                         <div class="message-input-container">
-                            <MessageInput :conversation-id="conversationId" 
-                                          :reply-to-message="replyToMessage"
-                                          :is-blocked="isBlocked"
-                                          @send="handleSendMessage"
-                                          @typing="handleTyping"
-                                          @stop-typing="handleStopTyping"
-                                          @cancel-reply="cancelReply"
-                                          @upload-progress="handleUploadProgress" />
+                            <MessageInput :conversation-id="conversationId" :reply-to-message="sendMessageReply"
+                                :is-blocked="isBlocked" @send="handleSendMessage" @typing="handleTyping"
+                                @stop-typing="handleStopTyping" @cancel-reply="cancelReply"
+                                @upload-progress="handleUploadProgress" />
                         </div>
                     </div>
                 </div>
@@ -196,13 +197,12 @@
                         <!-- Conversation Info -->
                         <div class="conversation-info-section">
                             <div class="info-avatar">
-                                <UserAvatar v-if="!conversation.isGroupChat" 
-                                            :user="getOtherParticipant()" size="xl" />
+                                <UserAvatar v-if="!conversation.isGroupChat" :user="getOtherParticipant()" size="xl" />
                                 <div v-else class="group-avatar-large">
                                     <i class="fas fa-users"></i>
                                 </div>
                             </div>
-                            
+
                             <div class="info-details">
                                 <h4 class="info-name">{{ getConversationTitle() }}</h4>
                                 <p v-if="!conversation.isGroupChat" class="info-username">
@@ -214,7 +214,8 @@
                             </div>
 
                             <div class="info-actions">
-                                <button v-if="!conversation.isGroupChat" class="btn btn-outline-primary" @click="viewProfile">
+                                <button v-if="!conversation.isGroupChat" class="btn btn-outline-primary"
+                                    @click="viewProfile">
                                     <i class="fas fa-user me-2"></i>
                                     Xem hồ sơ
                                 </button>
@@ -234,8 +235,8 @@
                                 </button>
                             </h6>
                             <div class="participants-list">
-                                <div v-for="participant in conversation.participants" :key="participant.id" 
-                                     class="participant-item">
+                                <div v-for="participant in conversation.participants" :key="participant.id"
+                                    class="participant-item">
                                     <UserAvatar :user="participant" size="md" />
                                     <div class="participant-info">
                                         <div class="participant-name">{{ participant.name }}</div>
@@ -251,12 +252,15 @@
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" @click="viewParticipantProfile(participant)">
-                                                <i class="fas fa-user me-2"></i>Xem hồ sơ</a></li>
-                                            <li><a class="dropdown-item" href="#" @click="makeAdmin(participant)" v-if="!participant.isAdmin">
-                                                <i class="fas fa-crown me-2"></i>Làm quản trị viên</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#" @click="removeParticipant(participant)">
-                                                <i class="fas fa-user-minus me-2"></i>Xóa khỏi nhóm</a></li>
+                                            <li><a class="dropdown-item" href="#"
+                                                    @click="viewParticipantProfile(participant)">
+                                                    <i class="fas fa-user me-2"></i>Xem hồ sơ</a></li>
+                                            <li><a class="dropdown-item" href="#" @click="makeAdmin(participant)"
+                                                    v-if="!participant.isAdmin">
+                                                    <i class="fas fa-crown me-2"></i>Làm quản trị viên</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"
+                                                    @click="removeParticipant(participant)">
+                                                    <i class="fas fa-user-minus me-2"></i>Xóa khỏi nhóm</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -272,8 +276,8 @@
                                 </button>
                             </div>
                             <div v-if="sharedMedia.length > 0" class="media-grid">
-                                <div v-for="media in sharedMedia.slice(0, 6)" :key="media.id" 
-                                     class="media-item" @click="viewMedia(media)">
+                                <div v-for="media in sharedMedia.slice(0, 6)" :key="media.id" class="media-item"
+                                    @click="viewMedia(media)">
                                     <img :src="media.thumbnail || media.url" :alt="media.name" class="img-fluid">
                                     <div v-if="media.type === 'video'" class="video-overlay">
                                         <i class="fas fa-play"></i>
@@ -295,8 +299,8 @@
                                 </button>
                             </div>
                             <div v-if="sharedFiles.length > 0" class="files-list">
-                                <div v-for="file in sharedFiles.slice(0, 5)" :key="file.id" 
-                                     class="file-item" @click="downloadFile(file)">
+                                <div v-for="file in sharedFiles.slice(0, 5)" :key="file.id" class="file-item"
+                                    @click="downloadFile(file)">
                                     <div class="file-icon">
                                         <i :class="getFileIcon(file.type)"></i>
                                     </div>
@@ -345,17 +349,17 @@
         </div>
 
         <!-- Modals -->
-        <SearchModal v-if="showSearchModal" :conversation-id="conversationId"
-                     @close="showSearchModal = false" @result="handleSearchResult" />
+        <SearchModal v-if="showSearchModal" :conversation-id="conversationId" @close="showSearchModal = false"
+            @result="handleSearchResult" />
 
         <MediaViewerModal v-if="showMediaViewer" :media="currentMedia" :media-list="allMedia"
-                          @close="showMediaViewer = false" @navigate="navigateMedia" />
+            @close="showMediaViewer = false" @navigate="navigateMedia" />
 
-        <AddMembersModal v-if="showAddMembersModal" :conversation="conversation"
-                         @close="showAddMembersModal = false" @added="handleMembersAdded" />
+        <AddMembersModal v-if="showAddMembersModal" :conversation="conversation" @close="showAddMembersModal = false"
+            @added="handleMembersAdded" />
 
-        <CallInterface v-if="activeCall" :call="activeCall" 
-                       @end-call="handleEndCall" @toggle-mute="handleToggleMute" @toggle-video="handleToggleVideo" />
+        <CallInterface v-if="activeCall" :call="activeCall" @end-call="handleEndCall" @toggle-mute="handleToggleMute"
+            @toggle-video="handleToggleVideo" />
     </div>
 </template>
 
@@ -477,14 +481,14 @@ const otherParticipantPresence = computed(() => {
 
 const onlineCount = computed(() => {
     if (!conversation.value?.isGroupChat) return 0
-    return conversation.value.participants?.filter(p => 
+    return conversation.value.participants?.filter(p =>
         presenceStore.getUserPresence(p.id)?.status === 'online'
     ).length || 0
 })
 
 const canAddMembers = computed(() => {
-    return conversation.value?.isGroupChat && 
-           (conversation.value.isAdmin || conversation.value.canAddMembers)
+    return conversation.value?.isGroupChat &&
+        (conversation.value.isAdmin || conversation.value.canAddMembers)
 })
 
 const canManageParticipant = computed(() => {
@@ -501,25 +505,25 @@ const allMedia = computed(() => {
 const loadConversation = async () => {
     try {
         isLoadingMessages.value = true
-        
+
         // Load conversation details
         const conv = await conversationStore.getConversation(conversationId.value)
         conversation.value = conv
-        
+
         // Load messages
         const msgs = await messageStore.loadMessages(conversationId.value, { refresh: true })
         messages.value = msgs
-        
+
         // Load typing users
         typingUsers.value = messageStore.getTypingUsersForConversation(conversationId.value)
-        
+
         // Mark as read
         await conversationStore.markAsRead(conversationId.value)
-        
+
         // Scroll to bottom
         await nextTick()
         scrollToBottom()
-        
+
     } catch (error) {
         console.error('Error loading conversation:', error)
         toast.error('Không thể tải cuộc trò chuyện')
@@ -531,18 +535,18 @@ const loadConversation = async () => {
 
 const loadEarlierMessages = async () => {
     if (!hasEarlierMessages.value || isLoadingEarlier.value) return
-    
+
     isLoadingEarlier.value = true
     try {
         const scrollPosition = messagesContainer.value?.scrollTop || 0
-        const earlierMessages = await messageStore.loadMessages(conversationId.value, { 
+        const earlierMessages = await messageStore.loadMessages(conversationId.value, {
             refresh: false,
-            before: messages.value[0]?.id 
+            before: messages.value[0]?.id
         })
-        
+
         messages.value = [...earlierMessages, ...messages.value]
         hasEarlierMessages.value = earlierMessages.length > 0
-        
+
         // Maintain scroll position
         await nextTick()
         if (messagesContainer.value) {
@@ -557,7 +561,7 @@ const handleSendMessage = async (messageData) => {
     try {
         const newMessage = await messageStore.sendMessage(conversationId.value, messageData)
         messages.value.push(newMessage)
-        
+
         await nextTick()
         scrollToBottom()
     } catch (error) {
@@ -574,7 +578,7 @@ const handleStopTyping = () => {
     messageStore.stopTyping(conversationId.value)
 }
 
-const replyToMessage = (message) => {
+const sendMessageReply = (message) => {
     replyToMessage.value = message
 }
 
@@ -589,7 +593,7 @@ const editMessage = async (message) => {
 
 const deleteMessage = async (message) => {
     if (!confirm('Bạn có chắc muốn xóa tin nhắn này?')) return
-    
+
     try {
         await messageStore.deleteMessage(message.id)
         messages.value = messages.value.filter(m => m.id !== message.id)
@@ -634,15 +638,15 @@ const navigateMedia = (direction) => {
 // UI helpers
 const getConversationTitle = () => {
     if (!conversation.value) return ''
-    
+
     if (conversation.value.title) {
         return conversation.value.title
     }
-    
+
     if (conversation.value.isGroupChat) {
         return `Nhóm ${conversation.value.participants?.length || 0} người`
     }
-    
+
     const otherParticipant = getOtherParticipant()
     return otherParticipant?.name || 'Cuộc trò chuyện'
 }
@@ -670,8 +674,8 @@ const shouldShowAvatar = (group, messageIndex) => {
 }
 
 const shouldShowSender = (group, messageIndex) => {
-    return messageIndex === 0 && conversation.value?.isGroupChat && 
-           group.senderId !== currentUser.value?.id
+    return messageIndex === 0 && conversation.value?.isGroupChat &&
+        group.senderId !== currentUser.value?.id
 }
 
 const shouldShowTime = (group, messageIndex) => {
@@ -683,7 +687,7 @@ const formatMessageDate = (dateString) => {
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    
+
     if (date.toDateString() === today.toDateString()) {
         return 'Hôm nay'
     } else if (date.toDateString() === yesterday.toDateString()) {
@@ -794,7 +798,7 @@ const muteConversation = async () => {
 
 const blockUser = async () => {
     if (!confirm('Bạn có chắc muốn chặn người dùng này?')) return
-    
+
     try {
         const otherParticipant = getOtherParticipant()
         if (otherParticipant) {
@@ -809,7 +813,7 @@ const blockUser = async () => {
 
 const deleteConversation = async () => {
     if (!confirm('Bạn có chắc muốn xóa cuộc trò chuyện này?')) return
-    
+
     try {
         await conversationStore.deleteConversation(conversationId.value)
         toast.success('Đã xóa cuộc trò chuyện')
@@ -856,7 +860,7 @@ const makeAdmin = async (participant) => {
 
 const removeParticipant = async (participant) => {
     if (!confirm(`Bạn có chắc muốn xóa ${participant.name} khỏi nhóm?`)) return
-    
+
     try {
         await conversationStore.removeParticipant(conversationId.value, participant.id)
         conversation.value.participants = conversation.value.participants.filter(p => p.id !== participant.id)
@@ -895,12 +899,12 @@ const handleUploadProgress = (progress) => {
 // Scroll handling
 const handleScroll = () => {
     if (!messagesContainer.value) return
-    
+
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
-    
+
     showScrollToBottom.value = !isNearBottom
-    
+
     if (isNearBottom) {
         newMessagesCount.value = 0
     }
@@ -957,7 +961,7 @@ watch(() => route.params.id, (newId) => {
 // Lifecycle
 onMounted(() => {
     setupRealTimeUpdates()
-    
+
     // Setup scroll listener
     if (messagesContainer.value) {
         messagesContainer.value.addEventListener('scroll', handleScroll)
@@ -966,7 +970,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     cleanupRealTimeUpdates()
-    
+
     if (messagesContainer.value) {
         messagesContainer.value.removeEventListener('scroll', handleScroll)
     }
@@ -1621,6 +1625,7 @@ onUnmounted(() => {
     0% {
         background: rgba(var(--bs-warning-rgb), 0.3);
     }
+
     100% {
         background: transparent;
     }

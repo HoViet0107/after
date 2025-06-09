@@ -12,21 +12,26 @@
                             <div class="header-content">
                                 <h2 class="header-title">Tin nhắn</h2>
                                 <div class="header-actions">
-                                    <button class="btn btn-ghost" @click="showNewChatModal = true" title="Tạo cuộc trò chuyện mới">
+                                    <button class="btn btn-ghost" @click="showNewChatModal = true"
+                                        title="Tạo cuộc trò chuyện mới">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <div class="dropdown">
-                                        <button class="btn btn-ghost dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <button class="btn btn-ghost dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown">
                                             <i class="fas fa-ellipsis-h"></i>
                                         </button>
                                         <ul class="dropdown-menu">
                                             <li><a class="dropdown-item" href="#" @click="markAllAsRead">
-                                                <i class="fas fa-check-double me-2"></i>Đánh dấu tất cả đã đọc</a></li>
+                                                    <i class="fas fa-check-double me-2"></i>Đánh dấu tất cả đã đọc</a>
+                                            </li>
                                             <li><a class="dropdown-item" href="#" @click="showArchivedChats">
-                                                <i class="fas fa-archive me-2"></i>Tin nhắn đã lưu trữ</a></li>
-                                            <li><hr class="dropdown-divider"></li>
+                                                    <i class="fas fa-archive me-2"></i>Tin nhắn đã lưu trữ</a></li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
                                             <li><a class="dropdown-item" href="#" @click="openChatSettings">
-                                                <i class="fas fa-cog me-2"></i>Cài đặt chat</a></li>
+                                                    <i class="fas fa-cog me-2"></i>Cài đặt chat</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -36,8 +41,8 @@
                             <div class="search-container">
                                 <div class="search-input-group">
                                     <i class="fas fa-search search-icon"></i>
-                                    <input type="text" v-model="searchQuery" class="form-control" 
-                                           placeholder="Tìm kiếm cuộc trò chuyện..." @input="handleSearch">
+                                    <input type="text" v-model="searchQuery" class="form-control"
+                                        placeholder="Tìm kiếm cuộc trò chuyện..." @input="handleSearch">
                                     <button v-if="searchQuery" class="btn btn-clear" @click="clearSearch">
                                         <i class="fas fa-times"></i>
                                     </button>
@@ -46,18 +51,18 @@
 
                             <!-- Filter Tabs -->
                             <div class="filter-tabs">
-                                <button class="filter-tab" :class="{ active: activeFilter === 'all' }" 
-                                        @click="setFilter('all')">
+                                <button class="filter-tab" :class="{ active: activeFilter === 'all' }"
+                                    @click="setFilter('all')">
                                     Tất cả
                                     <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
                                 </button>
-                                <button class="filter-tab" :class="{ active: activeFilter === 'unread' }" 
-                                        @click="setFilter('unread')">
+                                <button class="filter-tab" :class="{ active: activeFilter === 'unread' }"
+                                    @click="setFilter('unread')">
                                     Chưa đọc
                                     <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
                                 </button>
-                                <button class="filter-tab" :class="{ active: activeFilter === 'groups' }" 
-                                        @click="setFilter('groups')">
+                                <button class="filter-tab" :class="{ active: activeFilter === 'groups' }"
+                                    @click="setFilter('groups')">
                                     Nhóm
                                 </button>
                             </div>
@@ -74,8 +79,8 @@
                                     <i class="fas fa-comments empty-icon"></i>
                                     <h5 class="empty-title">{{ getEmptyStateTitle() }}</h5>
                                     <p class="empty-description">{{ getEmptyStateDescription() }}</p>
-                                    <button v-if="activeFilter === 'all'" class="btn btn-primary" 
-                                            @click="showNewChatModal = true">
+                                    <button v-if="activeFilter === 'all'" class="btn btn-primary"
+                                        @click="showNewChatModal = true">
                                         <i class="fas fa-plus me-2"></i>
                                         Bắt đầu cuộc trò chuyện
                                     </button>
@@ -83,15 +88,11 @@
                             </div>
 
                             <div v-else class="conversation-items">
-                                <ConversationItem v-for="conversation in filteredConversations" 
-                                                  :key="conversation.id" :conversation="conversation"
-                                                  :is-active="conversation.id === activeConversationId"
-                                                  :search-query="searchQuery"
-                                                  @click="selectConversation(conversation.id)"
-                                                  @archive="archiveConversation"
-                                                  @delete="deleteConversation"
-                                                  @mute="muteConversation"
-                                                  @mark-read="markConversationAsRead" />
+                                <ConversationItem v-for="conversation in filteredConversations" :key="conversation.id"
+                                    :conversation="conversation" :is-active="conversation.id === activeConversationId"
+                                    :search-query="searchQuery" @click="selectConversation(conversation.id)"
+                                    @archive="archiveConversation" @delete="deleteConversation" @mute="muteConversation"
+                                    @mark-read="markConversationAsRead" />
                             </div>
 
                             <!-- Load More -->
@@ -107,7 +108,7 @@
                             <h6 class="friends-title">Bạn bè đang online</h6>
                             <div class="friends-list">
                                 <div class="friend-item" v-for="friend in onlineFriends" :key="friend.id"
-                                     @click="startChatWithFriend(friend)">
+                                    @click="startChatWithFriend(friend)">
                                     <div class="friend-avatar">
                                         <UserAvatar :user="friend" size="sm" />
                                         <div class="online-dot"></div>
@@ -147,18 +148,19 @@
                                     <button class="btn btn-ghost back-btn d-lg-none" @click="backToConversations">
                                         <i class="fas fa-arrow-left"></i>
                                     </button>
-                                    
+
                                     <div class="conversation-info" @click="showConversationDetails">
-                                        <UserAvatar v-if="!activeConversation.isGroupChat" 
-                                                    :user="getOtherParticipant()" size="md" class="conversation-avatar" />
+                                        <UserAvatar v-if="!activeConversation.isGroupChat" :user="getOtherParticipant()"
+                                            size="md" class="conversation-avatar" />
                                         <div v-else class="group-avatar">
                                             <i class="fas fa-users"></i>
                                         </div>
-                                        
+
                                         <div class="conversation-details">
                                             <h5 class="conversation-title">{{ getConversationTitle() }}</h5>
                                             <div class="conversation-status">
-                                                <span v-if="!activeConversation.isGroupChat && otherParticipantPresence">
+                                                <span
+                                                    v-if="!activeConversation.isGroupChat && otherParticipantPresence">
                                                     {{ getPresenceText(otherParticipantPresence) }}
                                                 </span>
                                                 <span v-else-if="activeConversation.isGroupChat">
@@ -179,23 +181,29 @@
                                     <button class="btn btn-ghost" @click="startVideoCall" title="Gọi video">
                                         <i class="fas fa-video"></i>
                                     </button>
-                                    <button class="btn btn-ghost" @click="showConversationInfo = true" title="Thông tin">
+                                    <button class="btn btn-ghost" @click="showConversationInfo = true"
+                                        title="Thông tin">
                                         <i class="fas fa-info-circle"></i>
                                     </button>
                                     <div class="dropdown">
-                                        <button class="btn btn-ghost dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <button class="btn btn-ghost dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <ul class="dropdown-menu">
                                             <li><a class="dropdown-item" href="#" @click="searchInConversation">
-                                                <i class="fas fa-search me-2"></i>Tìm kiếm</a></li>
+                                                    <i class="fas fa-search me-2"></i>Tìm kiếm</a></li>
                                             <li><a class="dropdown-item" href="#" @click="viewSharedMedia">
-                                                <i class="fas fa-images me-2"></i>Ảnh & Video</a></li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item" href="#" @click="muteConversation(activeConversation)">
-                                                <i class="fas fa-bell-slash me-2"></i>Tắt thông báo</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#" @click="deleteConversation(activeConversation)">
-                                                <i class="fas fa-trash me-2"></i>Xóa cuộc trò chuyện</a></li>
+                                                    <i class="fas fa-images me-2"></i>Ảnh & Video</a></li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li><a class="dropdown-item" href="#"
+                                                    @click="muteConversation(activeConversation)">
+                                                    <i class="fas fa-bell-slash me-2"></i>Tắt thông báo</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"
+                                                    @click="deleteConversation(activeConversation)">
+                                                    <i class="fas fa-trash me-2"></i>Xóa cuộc trò chuyện</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -210,7 +218,8 @@
                                 <div v-else class="messages-list">
                                     <!-- Load earlier messages -->
                                     <div v-if="hasEarlierMessages" class="load-earlier" @click="loadEarlierMessages">
-                                        <div v-if="isLoadingEarlier" class="spinner-border spinner-border-sm text-primary"></div>
+                                        <div v-if="isLoadingEarlier"
+                                            class="spinner-border spinner-border-sm text-primary"></div>
                                         <span v-else>Tải tin nhắn cũ hơn</span>
                                     </div>
 
@@ -222,38 +231,32 @@
                                         </div>
 
                                         <!-- Message -->
-                                        <MessageBubble :message="message" 
-                                                       :is-own="message.senderId === currentUser.id"
-                                                       :show-avatar="shouldShowAvatar(message, index)"
-                                                       :show-sender="shouldShowSender(message, index)"
-                                                       @reply="replyToMessage"
-                                                       @edit="editMessage"
-                                                       @delete="deleteMessage"
-                                                       @react="reactToMessage"
-                                                       @forward="forwardMessage" />
+                                        <MessageBubble :message="message" :is-own="message.senderId === currentUser.id"
+                                            :show-avatar="shouldShowAvatar(message, index)"
+                                            :show-sender="shouldShowSender(message, index)" @reply="sendMessageReply"
+                                            @edit="editMessage" @delete="deleteMessage" @react="reactToMessage"
+                                            @forward="forwardMessage" />
                                     </div>
 
                                     <!-- Typing indicator -->
-                                    <TypingIndicator v-if="typingUsers.length > 0" 
-                                                     :typing-users="typingUsers" 
-                                                     :conversation-id="activeConversationId" />
+                                    <TypingIndicator v-if="typingUsers.length > 0" :typing-users="typingUsers"
+                                        :conversation-id="activeConversationId" />
                                 </div>
 
                                 <!-- Scroll to bottom button -->
                                 <button v-if="showScrollToBottom" class="scroll-to-bottom" @click="scrollToBottom">
                                     <i class="fas fa-chevron-down"></i>
-                                    <span v-if="newMessagesCount > 0" class="new-messages-badge">{{ newMessagesCount }}</span>
+                                    <span v-if="newMessagesCount > 0" class="new-messages-badge">{{ newMessagesCount
+                                        }}</span>
                                 </button>
                             </div>
 
                             <!-- Message Input -->
                             <div class="message-input-container">
-                                <MessageInput :conversation-id="activeConversationId" 
-                                              :reply-to-message="replyToMessage"
-                                              @send="handleSendMessage"
-                                              @typing="handleTyping"
-                                              @stop-typing="handleStopTyping"
-                                              @cancel-reply="cancelReply" />
+                                <MessageInput :conversation-id="activeConversationId"
+                                    :reply-to-message="sendMessageReply" @send="handleSendMessage"
+                                    @typing="handleTyping" @stop-typing="handleStopTyping"
+                                    @cancel-reply="cancelReply" />
                             </div>
                         </div>
                     </div>
@@ -263,15 +266,15 @@
 
         <!-- Modals -->
         <NewChatModal v-if="showNewChatModal" @close="showNewChatModal = false" @created="handleChatCreated" />
-        
+
         <ConversationInfoModal v-if="showConversationInfo" :conversation="activeConversation"
-                               @close="showConversationInfo = false" @updated="handleConversationUpdated" />
+            @close="showConversationInfo = false" @updated="handleConversationUpdated" />
 
-        <ForwardMessageModal v-if="showForwardModal" :message="forwardingMessage"
-                             @close="showForwardModal = false" @forwarded="handleMessageForwarded" />
+        <ForwardMessageModal v-if="showForwardModal" :message="forwardingMessage" @close="showForwardModal = false"
+            @forwarded="handleMessageForwarded" />
 
-        <CallInterface v-if="activeCall" :call="activeCall" 
-                       @end-call="handleEndCall" @toggle-mute="handleToggleMute" @toggle-video="handleToggleVideo" />
+        <CallInterface v-if="activeCall" :call="activeCall" @end-call="handleEndCall" @toggle-mute="handleToggleMute"
+            @toggle-video="handleToggleVideo" />
     </div>
 </template>
 
@@ -364,9 +367,9 @@ const filteredConversations = computed(() => {
     // Apply search
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
-        filtered = filtered.filter(conv => 
+        filtered = filtered.filter(conv =>
             conv.title?.toLowerCase().includes(query) ||
-            conv.participants?.some(p => 
+            conv.participants?.some(p =>
                 p.name?.toLowerCase().includes(query) ||
                 p.username?.toLowerCase().includes(query)
             )
@@ -406,7 +409,7 @@ const loadConversations = async (refresh = false) => {
 
 const loadMoreConversations = async () => {
     if (!hasMoreConversations.value || isLoadingMore.value) return
-    
+
     isLoadingMore.value = true
     try {
         await conversationStore.loadConversations({ refresh: false })
@@ -420,27 +423,27 @@ const selectConversation = async (conversationId) => {
 
     activeConversationId.value = conversationId
     router.push(`/chat/${conversationId}`)
-    
+
     await loadConversationData(conversationId)
 }
 
 const loadConversationData = async (conversationId) => {
     try {
         isLoadingMessages.value = true
-        
+
         // Set active conversation
         await conversationStore.setActiveConversation(conversationId)
-        
+
         // Load messages
         await messageStore.loadMessages(conversationId, { refresh: true })
-        
+
         // Mark as read
         await conversationStore.markAsRead(conversationId)
-        
+
         // Scroll to bottom
         await nextTick()
         scrollToBottom()
-        
+
     } catch (error) {
         console.error('Error loading conversation:', error)
         toast.error('Không thể tải cuộc trò chuyện')
@@ -451,12 +454,12 @@ const loadConversationData = async (conversationId) => {
 
 const loadEarlierMessages = async () => {
     if (!hasEarlierMessages.value || isLoadingEarlier.value) return
-    
+
     isLoadingEarlier.value = true
     try {
         const scrollPosition = messagesContainer.value.scrollTop
         await messageStore.loadMessages(activeConversationId.value, { refresh: false })
-        
+
         // Maintain scroll position
         await nextTick()
         messagesContainer.value.scrollTop = scrollPosition
@@ -484,7 +487,7 @@ const handleStopTyping = () => {
     messageStore.stopTyping(activeConversationId.value)
 }
 
-const replyToMessage = (message) => {
+const sendMessageReply = (message) => {
     replyToMessage.value = message
 }
 
@@ -499,7 +502,7 @@ const editMessage = (message) => {
 
 const deleteMessage = async (message) => {
     if (!confirm('Bạn có chắc muốn xóa tin nhắn này?')) return
-    
+
     try {
         await messageStore.deleteMessage(message.id)
         toast.success('Đã xóa tin nhắn')
@@ -539,15 +542,15 @@ const archiveConversation = async (conversation) => {
 
 const deleteConversation = async (conversation) => {
     if (!confirm('Bạn có chắc muốn xóa cuộc trò chuyện này?')) return
-    
+
     try {
         await conversationStore.deleteConversation(conversation.id)
-        
+
         if (activeConversationId.value === conversation.id) {
             activeConversationId.value = null
             router.push('/chat')
         }
-        
+
         toast.success('Đã xóa cuộc trò chuyện')
     } catch (error) {
         toast.error('Không thể xóa cuộc trò chuyện')
@@ -583,15 +586,15 @@ const markAllAsRead = async () => {
 // UI helpers
 const getConversationTitle = () => {
     if (!activeConversation.value) return ''
-    
+
     if (activeConversation.value.title) {
         return activeConversation.value.title
     }
-    
+
     if (activeConversation.value.isGroupChat) {
         return `Nhóm ${activeConversation.value.participants.length} người`
     }
-    
+
     const otherParticipant = getOtherParticipant()
     return otherParticipant?.name || 'Cuộc trò chuyện'
 }
@@ -610,18 +613,18 @@ const getPresenceText = (presence) => {
 
 const shouldShowDateSeparator = (message, index) => {
     if (index === 0) return true
-    
+
     const previousMessage = messages.value[index - 1]
     const currentDate = new Date(message.createdAt).toDateString()
     const previousDate = new Date(previousMessage.createdAt).toDateString()
-    
+
     return currentDate !== previousDate
 }
 
 const shouldShowAvatar = (message, index) => {
     if (message.senderId === currentUser.value?.id) return false
     if (index === messages.value.length - 1) return true
-    
+
     const nextMessage = messages.value[index + 1]
     return nextMessage.senderId !== message.senderId
 }
@@ -630,7 +633,7 @@ const shouldShowSender = (message, index) => {
     if (!activeConversation.value?.isGroupChat) return false
     if (message.senderId === currentUser.value?.id) return false
     if (index === 0) return true
-    
+
     const previousMessage = messages.value[index - 1]
     return previousMessage.senderId !== message.senderId
 }
@@ -647,12 +650,12 @@ const scrollToBottom = () => {
 
 const handleScroll = () => {
     if (!messagesContainer.value) return
-    
+
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
-    
+
     showScrollToBottom.value = !isNearBottom
-    
+
     if (isNearBottom) {
         newMessagesCount.value = 0
     }
@@ -811,14 +814,14 @@ watch(() => route.params.conversationId, (newId) => {
 // Lifecycle
 onMounted(async () => {
     await loadConversations(true)
-    
+
     if (activeConversationId.value) {
         await loadConversationData(activeConversationId.value)
     }
-    
+
     setupRealTimeUpdates()
     setupConversationsScroll()
-    
+
     // Setup scroll listener
     if (messagesContainer.value) {
         messagesContainer.value.addEventListener('scroll', handleScroll)
@@ -827,7 +830,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     cleanupRealTimeUpdates()
-    
+
     if (messagesContainer.value) {
         messagesContainer.value.removeEventListener('scroll', handleScroll)
     }
